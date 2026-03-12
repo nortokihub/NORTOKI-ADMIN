@@ -1,0 +1,2657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earnplus Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; margin: 0; }
+
+        /* ── SIDEBAR ── */
+        #sidebar {
+            position: fixed; top: 0; left: 0;
+            width: 260px; height: 100vh;
+            background: linear-gradient(180deg, #0d1117 0%, #161b27 100%);
+            border-right: 1px solid rgba(255,202,40,0.1);
+            z-index: 100; overflow-y: auto;
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            display: flex; flex-direction: column;
+        }
+        #sidebar.collapsed { transform: translateX(-260px); }
+        .sidebar-logo {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg,#FFCA28,#FF8F00); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #2a1804; }
+        .logo-text { font-size: 18px; font-weight: 800; color: white; }
+        .logo-badge { font-size: 10px; font-weight: 700; color: #FFCA28; background: rgba(255,202,40,0.15); padding: 2px 8px; border-radius: 20px; margin-top: 2px; }
+        .sidebar-section { padding: 12px 12px 0; }
+        .sidebar-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px; margin-bottom: 6px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 12px; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s;
+            color: rgba(255,255,255,0.6); font-weight: 500; font-size: 14px;
+            margin-bottom: 2px; border: 1px solid transparent;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
+        .nav-item.active { background: rgba(255,202,40,0.12); color: #FFCA28; border-color: rgba(255,202,40,0.2); }
+        .nav-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .nav-item.active .nav-icon { background: rgba(255,202,40,0.2); }
+        .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+
+        /* ── MAIN CONTENT ── */
+        #main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            background: #0f1117;
+            transition: margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        #main-content.expanded { margin-left: 0; }
+        .top-bar {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(15,17,23,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 24px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .toggle-btn { width: 38px; height: 38px; background: rgba(255,255,255,0.06); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; color: white; transition: all 0.2s; }
+        .toggle-btn:hover { background: rgba(255,255,255,0.1); }
+        .page-title-bar { font-size: 18px; font-weight: 700; color: white; flex: 1; }
+        .top-bar-right { display: flex; align-items: center; gap: 10px; }
+        .admin-chip { background: rgba(255,202,40,0.15); color: #FFCA28; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,202,40,0.25); }
+        .logout-btn { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+        /* ── PAGE CONTENT ── */
+        .page-wrap { padding: 24px; display: none; animation: fadeIn 0.3s ease; }
+        .page-wrap.active { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── CARDS ── */
+        .card { background: #161b27; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; }
+        .card-gold { background: linear-gradient(135deg,rgba(255,202,40,0.08),rgba(255,143,0,0.05)); border: 1px solid rgba(255,202,40,0.2); border-radius: 18px; }
+        .stat-card {
+            background: #161b27; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px; padding: 20px;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::before { content:''; position:absolute; top:-40px; right:-40px; width:100px; height:100px; border-radius:50%; opacity:0.15; }
+        .stat-card.blue::before { background:#3b82f6; }
+        .stat-card.gold::before { background:#FFCA28; }
+        .stat-card.green::before { background:#10b981; }
+        .stat-card.red::before { background:#ef4444; }
+        .stat-label { font-size:12px; font-weight:600; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+        .stat-value { font-size:36px; font-weight:900; color:white; }
+        .stat-icon { position:absolute; top:20px; right:20px; opacity:0.4; }
+
+        /* ── TABLES ── */
+        .tbl-wrap { overflow-x: auto; border-radius: 14px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        thead { background: rgba(255,255,255,0.04); }
+        th { padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        td { padding: 14px 16px; font-size: 13px; color: rgba(255,255,255,0.8); border-top: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* ── INPUTS ── */
+        .ep-input {
+            width: 100%; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 12px 16px; color: white; font-size: 14px;
+            font-family: 'Poppins', sans-serif; transition: border-color 0.2s; outline: none;
+        }
+        .ep-input:focus { border-color: #FFCA28; background: rgba(255,202,40,0.05); }
+        .ep-input::placeholder { color: rgba(255,255,255,0.3); }
+        select.ep-input option { background: #1e2536; }
+        label.ep-label { display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── BUTTONS ── */
+        .btn { padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; font-family: 'Poppins', sans-serif; }
+        .btn:active { transform: scale(0.97); }
+        .btn-gold { background: linear-gradient(135deg,#FFCA28,#FF8F00); color: #2a1804; }
+        .btn-gold:hover { box-shadow: 0 4px 15px rgba(255,202,40,0.4); }
+        .btn-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+        .btn-green:hover { background: rgba(16,185,129,0.25); }
+        .btn-red { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+        .btn-red:hover { background: rgba(239,68,68,0.25); }
+        .btn-blue { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+        .btn-blue:hover { background: rgba(59,130,246,0.25); }
+        .btn-dark { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.1); }
+        .btn-dark:hover { background: rgba(255,255,255,0.12); }
+        .btn-full { width: 100%; padding: 14px; font-size: 15px; border-radius: 14px; }
+
+        /* ── BADGES ── */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+        .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+        .badge-yellow { background: rgba(255,202,40,0.15); color: #FFCA28; }
+        .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+        /* ── MODAL ── */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:500; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:#161b27; border:1px solid rgba(255,255,255,0.1); border-radius:22px; padding:28px; width:100%; max-width:440px; max-height:90vh; overflow-y:auto; }
+        .modal-title { font-size:18px; font-weight:800; color:white; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; }
+        .modal-close { width:32px; height:32px; background:rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:white; }
+
+        /* ── TOAST ── */
+        #toast { position:fixed; top:24px; right:24px; z-index:1000; padding:14px 22px; border-radius:14px; font-weight:700; font-size:14px; opacity:0; transition:all 0.4s; transform:translateY(-10px); pointer-events:none; }
+        #toast.show { opacity:1; transform:translateY(0); }
+        #toast.success { background:linear-gradient(135deg,#10b981,#059669); color:white; }
+        #toast.error { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; }
+
+        /* ── LOADER ── */
+        #loader { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); z-index:900; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+        #loader.hidden { display:none; }
+        .spin { width:48px; height:48px; border:4px solid rgba(255,202,40,0.2); border-top-color:#FFCA28; border-radius:50%; animation:spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* ── LOGIN ── */
+        #login-page { display:none; min-height:100vh; align-items:center; justify-content:center; background: radial-gradient(ellipse at 30% 40%,rgba(255,202,40,0.08) 0%,transparent 60%), #0d1117; }
+        #login-page.show { display:flex; }
+        .login-card { background:#161b27; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px; width:100%; max-width:420px; }
+
+        /* ── DIVIDER ── */
+        .divider { border:none; border-top:1px solid rgba(255,255,255,0.06); margin:20px 0; }
+
+        /* Section header */
+        .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .section-hdr h3 { font-size:16px; font-weight:700; color:white; }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:4px; }
+    </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+    <div class="spin"></div>
+    <div style="color:rgba(255,255,255,0.5);font-size:14px;font-weight:600">Loading Admin Panel...</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     LOGIN PAGE
+═══════════════════════════════════════ -->
+<div id="login-page">
+    <div class="login-card">
+        <div style="text-align:center;margin-bottom:32px">
+            <div style="width:60px;height:60px;background:linear-gradient(135deg,#FFCA28,#FF8F00);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#2a1804;margin:0 auto 14px">EP</div>
+            <h1 style="font-size:26px;font-weight:900;color:white;margin:0">Earnplus Admin</h1>
+            <p style="color:rgba(255,255,255,0.4);font-size:14px;margin:6px 0 0">Secure Admin Dashboard</p>
+        </div>
+        <label class="ep-label">Admin Email</label>
+        <input id="admin-email" type="email" placeholder="admin@earnplus.com" class="ep-input" style="margin-bottom:14px">
+        <label class="ep-label">Password</label>
+        <input id="admin-password" type="password" placeholder="••••••••" class="ep-input" style="margin-bottom:24px">
+        <button id="admin-login-btn" class="btn btn-gold btn-full">Login to Dashboard</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ADMIN PANEL
+═══════════════════════════════════════ -->
+<div id="admin-panel" style="display:none">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">EP</div>
+            <div>
+                <div class="logo-text">Earnplus</div>
+                <div class="logo-badge">Admin Panel</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section" style="margin-top:8px">
+            <div class="sidebar-section-label">Overview</div>
+            <div class="nav-item active" data-page="dashboard-page" data-title="Dashboard" onclick="navTo('dashboard-page','Dashboard')">
+                <div class="nav-icon">📊</div> Dashboard
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Content</div>
+            <div class="nav-item" data-page="slider-page" data-title="Slider Banners" onclick="navTo('slider-page','Slider Banners')">
+                <div class="nav-icon">🖼️</div> Slider
+            </div>
+            <div class="nav-item" data-page="offers-page" data-title="Offers" onclick="navTo('offers-page','Offers')">
+                <div class="nav-icon">🎁</div> Offers
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">App Controls</div>
+            <div class="nav-item" data-page="popup-page" data-title="Popup Notice" onclick="navTo('popup-page','Popup Notice')">
+                <div class="nav-icon">📢</div> Popup Notice
+            </div>
+            <div class="nav-item" data-page="notices-page" data-title="Notice Ticker" onclick="navTo('notices-page','Notice Ticker')">
+                <div class="nav-icon">📡</div> Notice Ticker
+            </div>
+            <div class="nav-item" data-page="withdraw-ticker-page" data-title="Withdraw Ticker" onclick="navTo('withdraw-ticker-page','Withdraw Ticker')">
+                <div class="nav-icon">💸</div> Withdraw Ticker
+            </div>
+            <div class="nav-item" data-page="leaderboard-page" data-title="Leaderboard" onclick="navTo('leaderboard-page','Leaderboard')">
+                <div class="nav-icon">👑</div> Leaderboard
+            </div>
+            <div class="nav-item" data-page="rules-page" data-title="Rules" onclick="navTo('rules-page','Rules')">
+                <div class="nav-icon">📜</div> Rules
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Investment & Deposit</div>
+            <div class="nav-item" data-page="plans-page" data-title="Investment Plans" onclick="navTo('plans-page','Investment Plans')">
+                <div class="nav-icon">📈</div> Plans
+            </div>
+            <div class="nav-item" data-page="deposit-methods-page" data-title="Deposit Methods" onclick="navTo('deposit-methods-page','Deposit Methods')">
+                <div class="nav-icon">💳</div> Deposit Methods
+            </div>
+            <div class="nav-item" data-page="deposit-settings-page" data-title="Deposit Settings" onclick="navTo('deposit-settings-page','Deposit Settings')">
+                <div class="nav-icon">⚙️</div> Deposit Settings
+            </div>
+            <div class="nav-item" data-page="deposits-page" data-title="Deposits" onclick="navTo('deposits-page','Deposits')">
+                <div class="nav-icon">💰</div> Deposits
+            </div>
+            <div class="nav-item" data-page="referral-tasks-page" data-title="Referral Tasks" onclick="navTo('referral-tasks-page','Referral Tasks')">
+                <div class="nav-icon">🎯</div> Referral Tasks
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">App Info</div>
+            <div class="nav-item" data-page="about-page-admin" data-title="About Us" onclick="navTo('about-page-admin','About Us')">
+                <div class="nav-icon">ℹ️</div> About Us
+            </div>
+            <div class="nav-item" data-page="app-config-page" data-title="App Config" onclick="navTo('app-config-page','App Config')">
+                <div class="nav-icon">📱</div> App Config
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">New Controls</div>
+            <div class="nav-item" data-page="maintenance-page" data-title="Maintenance Mode" onclick="navTo('maintenance-page','Maintenance Mode')">
+                <div class="nav-icon">🔧</div> Maintenance
+            </div>
+            <div class="nav-item" data-page="task-rules-page" data-title="Task Rules" onclick="navTo('task-rules-page','Task Rules')">
+                <div class="nav-icon">📋</div> Task Rules
+            </div>
+            <div class="nav-item" data-page="withdrawal-rules-page" data-title="Withdrawal Rules" onclick="navTo('withdrawal-rules-page','Withdrawal Rules')">
+                <div class="nav-icon">💳</div> Withdrawal Rules
+            </div>
+            <div class="nav-item" data-page="referral-rules-page" data-title="Referral Rules" onclick="navTo('referral-rules-page','Referral Rules')">
+                <div class="nav-icon">🤝</div> Referral Rules
+            </div>
+            <div class="nav-item" data-page="auth-slider-page" data-title="Login Slider" onclick="navTo('auth-slider-page','Login Slider')">
+                <div class="nav-icon">🖼️</div> Login Slider
+            </div>
+            <div class="nav-item" data-page="telegram-page" data-title="Telegram Links" onclick="navTo('telegram-page','Telegram Links')">
+                <div class="nav-icon">✈️</div> Telegram Links
+            </div>
+            <div class="nav-item" data-page="reg-bonus-page" data-title="Registration Bonus" onclick="navTo('reg-bonus-page','Registration Bonus')">
+                <div class="nav-icon">🎁</div> Reg. Bonus
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Users & Finance</div>
+            <div class="nav-item" data-page="users-page" data-title="User Management" onclick="navTo('users-page','User Management')">
+                <div class="nav-icon">👥</div> Users
+            </div>
+            <div class="nav-item" data-page="password-resets-page" data-title="Password Reset Requests" onclick="navTo('password-resets-page','Password Reset Requests')">
+                <div class="nav-icon">🔑</div> Password Resets
+            </div>
+            <div class="nav-item" data-page="withdrawals-page" data-title="Withdrawals" onclick="navTo('withdrawals-page','Withdrawals')">
+                <div class="nav-icon">💰</div> Withdrawals
+            </div>
+            <div class="nav-item" data-page="notifications-page" data-title="Notifications" onclick="navTo('notifications-page','Notifications')">
+                <div class="nav-icon">🔔</div> Notifications
+            </div>
+            <div class="nav-item" data-page="settings-page" data-title="App Settings" onclick="navTo('settings-page','App Settings')">
+                <div class="nav-icon">⚙️</div> Settings
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn btn-red" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
+                <i data-lucide="log-out" style="width:16px;height:16px"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main-content">
+        <div class="top-bar">
+            <button class="toggle-btn" onclick="toggleSidebar()">
+                <i data-lucide="menu" style="width:18px;height:18px"></i>
+            </button>
+            <div class="page-title-bar" id="page-title">Dashboard</div>
+            <div class="top-bar-right">
+                <span class="admin-chip">Admin</span>
+            </div>
+        </div>
+
+        <!-- ─── DASHBOARD ─── -->
+        <div id="dashboard-page" class="page-wrap active">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+                <div class="stat-card blue">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value" id="stat-users">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">👥</span></div>
+                </div>
+                <div class="stat-card gold">
+                    <div class="stat-label">Pending Withdrawals</div>
+                    <div class="stat-value" id="stat-pending">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">⏳</span></div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-label">Approved Withdrawals</div>
+                    <div class="stat-value" id="stat-approved">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">✅</span></div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-label">Total Tasks Done</div>
+                    <div class="stat-value" id="stat-tasks">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">📋</span></div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-label">Pending Deposits</div>
+                    <div class="stat-value" id="stat-deposits-pending">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">📥</span></div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-label">Total Deposits</div>
+                    <div class="stat-value" id="stat-deposits-total">0</div>
+                    <div class="stat-icon"><span style="font-size:32px">🏦</span></div>
+                </div>
+            </div>
+
+            <!-- Recent Withdrawals -->
+            <div class="card" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">⏳ Pending Withdrawals</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>User</th><th>Amount</th><th>Method</th><th>Number</th><th>Date</th><th>Action</th>
+                        </tr></thead>
+                        <tbody id="dash-pending-body">
+                            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── SLIDER ─── -->
+        <div id="slider-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Slider Banner</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Image URL</label><input id="slider-img" type="text" placeholder="https://..." class="ep-input"></div>
+                    <div><label class="ep-label">Click Link (YouTube/Telegram)</label><input id="slider-link" type="text" placeholder="https://..." class="ep-input"></div>
+                </div>
+                <div style="margin-bottom:12px"><label class="ep-label">Title (Optional)</label><input id="slider-title" type="text" placeholder="Banner title" class="ep-input"></div>
+                <div style="margin-bottom:12px"><label class="ep-label">Speed (ms, e.g. 3000)</label><input id="slider-speed" type="number" placeholder="3000" class="ep-input"></div>
+                <button onclick="addSlider()" class="btn btn-gold">Add Slider</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🖼️ All Sliders</h3>
+                <div id="sliders-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── OFFERS ─── -->
+        <div id="offers-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Offer</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Title</label><input id="offer-title" type="text" placeholder="Special Offer" class="ep-input"></div>
+                    <div><label class="ep-label">Image URL</label><input id="offer-img" type="text" placeholder="https://..." class="ep-input"></div>
+                </div>
+                <div style="margin-bottom:12px"><label class="ep-label">Description</label><textarea id="offer-desc" rows="3" placeholder="Offer details..." class="ep-input"></textarea></div>
+                <div style="margin-bottom:12px"><label class="ep-label">External Link (Optional)</label><input id="offer-link" type="text" placeholder="https://..." class="ep-input"></div>
+                <button onclick="addOffer()" class="btn btn-gold">Add Offer</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🎁 All Offers</h3>
+                <div id="offers-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── POPUP NOTICE ─── -->
+        <div id="popup-page" class="page-wrap">
+            <div class="card-gold" style="padding:24px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📢 Popup Notice Settings</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Notice Title</label><input id="popup-title" type="text" placeholder="Important Notice" class="ep-input"></div>
+                <div style="margin-bottom:12px"><label class="ep-label">Description</label><textarea id="popup-desc" rows="4" placeholder="Notice description..." class="ep-input"></textarea></div>
+                <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+                    <input type="checkbox" id="popup-active" style="width:18px;height:18px;accent-color:#FFCA28">
+                    <label style="color:rgba(255,255,255,0.8);font-weight:600;font-size:14px">Enable popup (show on home page)</label>
+                </div>
+                <button onclick="savePopupNotice()" class="btn btn-gold btn-full">Save Popup Notice</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:12px">Current Status</h3>
+                <div id="popup-status" style="color:rgba(255,255,255,0.5);font-size:14px">Loading...</div>
+            </div>
+        </div>
+
+        <!-- ─── NOTICE TICKER ─── -->
+        <div id="notices-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Notice</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Notice Text</label><input id="notice-text" type="text" placeholder="Enter notice text..." class="ep-input"></div>
+                <div style="margin-bottom:12px"><label class="ep-label">Speed (seconds, e.g. 20)</label><input id="notice-speed" type="number" placeholder="20" class="ep-input"></div>
+                <button onclick="addNotice()" class="btn btn-gold">Add Notice</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📡 All Notices</h3>
+                <div id="notices-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── WITHDRAW TICKER ─── -->
+        <div id="withdraw-ticker-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Withdraw Entry</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Username</label><input id="wtick-user" type="text" placeholder="Rahim" class="ep-input"></div>
+                    <div><label class="ep-label">Masked Number</label><input id="wtick-num" type="text" placeholder="01382***" class="ep-input"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Method</label><select id="wtick-method" class="ep-input"><option>bKash</option><option>Nagad</option><option>Rocket</option></select></div>
+                    <div><label class="ep-label">Amount (৳)</label><input id="wtick-amount" type="number" placeholder="500" class="ep-input"></div>
+                    <div><label class="ep-label">Scroll Speed (s)</label><input id="wtick-speed" type="number" placeholder="12" class="ep-input"></div>
+                </div>
+                <button onclick="addWithdrawTick()" class="btn btn-gold">Add Entry</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">💸 All Entries</h3>
+                <div id="wtick-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── LEADERBOARD ─── -->
+        <div id="leaderboard-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Leaderboard Entry</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Username</label><input id="lb-user" type="text" placeholder="Rahim" class="ep-input"></div>
+                    <div><label class="ep-label">Total Earned (৳)</label><input id="lb-earned" type="number" placeholder="5000" class="ep-input"></div>
+                </div>
+                <div style="margin-bottom:12px"><label class="ep-label">Profile Image URL (Optional)</label><input id="lb-img" type="text" placeholder="https://..." class="ep-input"></div>
+                <button onclick="addLeaderboard()" class="btn btn-gold">Add Entry</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">👑 Leaderboard</h3>
+                <div id="lb-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── RULES ─── -->
+        <div id="rules-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Rule</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Rule Text</label><textarea id="rule-text" rows="3" placeholder="Enter rule..." class="ep-input"></textarea></div>
+                <button onclick="addRule()" class="btn btn-gold">Add Rule</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📜 All Rules</h3>
+                <div id="rules-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── USERS ─── -->
+        <div id="users-page" class="page-wrap">
+            <div class="card" style="padding:16px;margin-bottom:16px">
+                <input id="user-search" type="text" placeholder="🔍 Search by name or email..." class="ep-input" oninput="filterUsers()">
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">👥 All Users</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>USER ID</th><th>Name</th><th>Email</th><th>Balance</th><th>Today Earned</th><th>Refs</th><th>Status</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody id="users-table-body">
+                            <tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── PASSWORD RESET REQUESTS ─── -->
+        <div id="password-resets-page" class="page-wrap">
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🔑 Password Reset Requests</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>Username</th><th>UID</th><th>Email</th><th>Message</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody id="pwd-resets-body">
+                            <tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── WITHDRAWALS ─── -->
+        <div id="withdrawals-page" class="page-wrap">
+            <div class="card" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">⏳ Pending Requests</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Number</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="withdrawals-table-body">
+                            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📋 Withdrawal History</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="withdrawal-history-body">
+                            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── NOTIFICATIONS ─── -->
+        <div id="notifications-page" class="page-wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:14px">📣 Send to All Users</h3>
+                    <div style="margin-bottom:10px"><label class="ep-label">Title</label><input id="notif-title-all" type="text" placeholder="Announcement" class="ep-input"></div>
+                    <div style="margin-bottom:14px"><label class="ep-label">Message</label><textarea id="notif-msg-all" rows="3" placeholder="..." class="ep-input"></textarea></div>
+                    <button onclick="sendToAll()" class="btn btn-gold btn-full">Send to All</button>
+                </div>
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:14px">📩 Send to Specific User</h3>
+                    <div style="margin-bottom:10px"><label class="ep-label">User Email</label><input id="notif-email" type="email" placeholder="user@email.com" class="ep-input"></div>
+                    <div style="margin-bottom:10px"><label class="ep-label">Title</label><input id="notif-title-spec" type="text" placeholder="Personal Message" class="ep-input"></div>
+                    <div style="margin-bottom:14px"><label class="ep-label">Message</label><textarea id="notif-msg-spec" rows="2" placeholder="..." class="ep-input"></textarea></div>
+                    <button onclick="sendToUser()" class="btn btn-gold btn-full">Send</button>
+                </div>
+            </div>
+            <div class="card" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📜 Notification History</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>Title</th><th>Message</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="all-notifications-body">
+                            <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:14px">🔍 Check User Notifications</h3>
+                <div style="display:flex;gap:10px;margin-bottom:14px">
+                    <input id="specific-history-email" type="email" placeholder="user@email.com" class="ep-input">
+                    <button onclick="loadSpecificUserNotifications()" class="btn btn-blue" style="white-space:nowrap">Check</button>
+                </div>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>Title</th><th>Message</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="specific-notifications-body">
+                            <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Enter email above</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── SETTINGS ─── -->
+        <div id="settings-page" class="page-wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="card" style="padding:24px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">⚙️ Global Settings</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Minimum Withdrawal (৳)</label><input id="min-withdrawal" type="number" placeholder="500" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Daily Task Limit</label><input id="daily-ad-limit" type="number" placeholder="10" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Referral Reward (৳)</label><input id="referral-reward" type="number" placeholder="100" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Telegram Username (legacy)</label><input id="telegram-username" type="text" placeholder="your_telegram" class="ep-input"></div>
+                    <div style="margin-bottom:16px">
+                        <label class="ep-label">Payment Methods (comma separated)</label>
+                        <input id="payment-methods" type="text" placeholder="bKash, Nagad, Rocket" class="ep-input">
+                    </div>
+                    <button onclick="saveSettings()" class="btn btn-gold btn-full">Save Settings</button>
+                </div>
+                <div class="card" style="padding:24px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">📊 Task Stats</h3>
+                    <div class="tbl-wrap">
+                        <table>
+                            <thead><tr><th>User</th><th>Email</th><th>Tasks Done</th><th>Action</th></tr></thead>
+                            <tbody id="ads-watched-body">
+                                <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:20px">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── INVESTMENT PLANS ─── -->
+        <div id="plans-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Investment Plan</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Plan Name</label><input id="plan-name" type="text" placeholder="e.g. Silver Plan" class="ep-input"></div>
+                    <div><label class="ep-label">Price (৳)</label><input id="plan-price" type="number" placeholder="300" class="ep-input"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Daily Task Limit</label><input id="plan-daily-limit" type="number" placeholder="10" class="ep-input"></div>
+                    <div><label class="ep-label">Daily Earnings (৳)</label><input id="plan-daily-earn" type="number" placeholder="50" class="ep-input"></div>
+                    <div><label class="ep-label">Duration (days)</label><input id="plan-duration" type="number" placeholder="30" class="ep-input"></div>
+                </div>
+                <div style="margin-bottom:12px"><label class="ep-label">Plan Image URLs (comma separated, for slider)</label><input id="plan-images" type="text" placeholder="https://img1.jpg, https://img2.jpg" class="ep-input"></div>
+                <div style="margin-bottom:12px"><label class="ep-label">Description (Optional)</label><textarea id="plan-desc" rows="2" placeholder="Plan description..." class="ep-input"></textarea></div>
+                <button onclick="addPlan()" class="btn btn-gold">Add Plan</button>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📈 All Plans</h3>
+                <div id="plans-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+
+            <!-- ─── PLAN TASK MANAGER ─── -->
+            <div class="card" style="padding:20px;margin-top:20px" id="plan-task-manager" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:gap">
+                    <div>
+                        <h3 style="font-weight:700;color:white;font-size:16px" id="plan-task-manager-title">📋 Tasks</h3>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px" id="plan-task-manager-sub">Plan select করুন</div>
+                    </div>
+                    <button onclick="document.getElementById('plan-task-manager').style.display='none'" class="btn btn-dark" style="font-size:12px;padding:6px 14px">✕ Close</button>
+                </div>
+
+                <!-- Add Task Form -->
+                <div class="card-gold" style="padding:16px;margin-bottom:16px;border-radius:14px">
+                    <div style="font-size:13px;font-weight:700;color:#FFCA28;margin-bottom:12px">➕ Add Task to this Plan</div>
+                    <input type="hidden" id="pt-plan-id">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                        <div><label class="ep-label">Task Name</label><input id="pt-name" type="text" placeholder="Watch YouTube video" class="ep-input"></div>
+                        <div><label class="ep-label">Ad Link URL</label><input id="pt-url" type="text" placeholder="https://..." class="ep-input"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div><label class="ep-label">Reward (৳)</label><input id="pt-reward" type="number" placeholder="5" class="ep-input"></div>
+                        <div><label class="ep-label">Timer (sec, min 15)</label><input id="pt-timer" type="number" placeholder="30" min="15" class="ep-input"></div>
+                        <div><label class="ep-label">Emoji</label><input id="pt-emoji" type="text" placeholder="▶️" class="ep-input"></div>
+                    </div>
+                    <button onclick="addPlanTask()" class="btn btn-gold">Add Task</button>
+                </div>
+
+                <!-- Tasks List -->
+                <div id="plan-tasks-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px">No tasks yet</div></div>
+            </div>
+        </div>
+
+        <!-- ─── DEPOSIT METHODS ─── -->
+        <div id="deposit-methods-page" class="page-wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add BD Method (BKash/Nagad/Rocket)</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Method Key (no spaces, e.g. bkash)</label><input id="dm-key" type="text" placeholder="bkash" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Display Name</label><input id="dm-name" type="text" placeholder="BKash" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Logo/Icon URL</label><input id="dm-icon" type="text" placeholder="https://..." class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Phone Number (wallet address)</label><input id="dm-phone" type="text" placeholder="01XXXXXXXXX" class="ep-input"></div>
+                    <button onclick="addDepositMethod('bd')" class="btn btn-gold">Add BD Method</button>
+                </div>
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Crypto Method</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Method Key (e.g. binance)</label><input id="dm-crypto-key" type="text" placeholder="binance" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Display Name</label><input id="dm-crypto-name" type="text" placeholder="Binance (USDT TRC20)" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Logo/Icon URL</label><input id="dm-crypto-icon" type="text" placeholder="https://..." class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Wallet Address</label><input id="dm-crypto-addr" type="text" placeholder="TRC20 address..." class="ep-input"></div>
+                    <button onclick="addDepositMethod('crypto')" class="btn btn-gold">Add Crypto Method</button>
+                </div>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">💳 All Deposit Methods</h3>
+                <div id="deposit-methods-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── DEPOSIT SETTINGS ─── -->
+        <div id="deposit-settings-page" class="page-wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">📝 Deposit Rules</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Add Rule</label><textarea id="dep-rule-text" rows="2" placeholder="e.g. Send exact amount only" class="ep-input"></textarea></div>
+                    <button onclick="addDepositRule()" class="btn btn-gold" style="margin-bottom:16px">Add Rule</button>
+                    <div id="deposit-rules-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px">Loading...</div></div>
+                </div>
+                <div class="card-gold" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">📢 Deposit Pending Notice</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Notice Title</label><input id="dep-notice-title" type="text" placeholder="Deposit Received!" class="ep-input"></div>
+                    <div style="margin-bottom:16px"><label class="ep-label">Notice Message</label><textarea id="dep-notice-msg" rows="3" placeholder="Your deposit is under review..." class="ep-input"></textarea></div>
+                    <button onclick="saveDepositPendingNotice()" class="btn btn-gold btn-full">Save Notice</button>
+                    <div id="dep-notice-status" style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center"></div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="card" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">💸 Deposit Commission</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">Commission Title</label><input id="dep-comm-title" type="text" placeholder="Deposit Commission" class="ep-input"></div>
+                    <div style="margin-bottom:12px"><label class="ep-label">Commission % (e.g. 5)</label><input id="dep-comm-pct" type="number" placeholder="5" class="ep-input"></div>
+                    <div style="margin-bottom:16px"><label class="ep-label">Description</label><textarea id="dep-comm-desc" rows="2" placeholder="Earn 5% commission on referral deposits" class="ep-input"></textarea></div>
+                    <button onclick="saveDepositCommission()" class="btn btn-gold btn-full">Save Commission</button>
+                </div>
+                <div class="card" style="padding:20px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">💵 BD Deposit Amounts</h3>
+                    <div style="margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.4)">Chips shown on deposit page (৳) — comma separated</div>
+                    <div style="display:flex;gap:8px;margin-bottom:8px">
+                        <input id="dep-amounts-bd" type="text" placeholder="300,500,800,1000" class="ep-input" style="flex:1">
+                        <button onclick="saveDepositAmounts('bd')" class="btn btn-gold" style="white-space:nowrap">Save BD</button>
+                    </div>
+                    <div id="bd-chips-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px"></div>
+
+                    <h3 style="font-weight:700;color:white;margin-bottom:8px">🪙 Crypto Deposit Amounts</h3>
+                    <div style="margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.4)">Chips shown on deposit page ($) — comma separated</div>
+                    <div style="display:flex;gap:8px;margin-bottom:8px">
+                        <input id="dep-amounts-crypto" type="text" placeholder="3,5,8,10" class="ep-input" style="flex:1">
+                        <button onclick="saveDepositAmounts('crypto')" class="btn btn-gold" style="white-space:nowrap">Save Crypto</button>
+                    </div>
+                    <div id="crypto-chips-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px"></div>
+
+                    <h3 style="font-weight:700;color:white;margin-bottom:12px">🔻 Minimum Deposit Amount</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div>
+                            <label class="ep-label">BD Min Deposit (৳)</label>
+                            <input id="min-deposit-bd" type="number" placeholder="300" class="ep-input">
+                        </div>
+                        <div>
+                            <label class="ep-label">Crypto Min Deposit ($)</label>
+                            <input id="min-deposit-crypto" type="number" placeholder="3" class="ep-input">
+                        </div>
+                    </div>
+                    <button onclick="saveMinDeposit()" class="btn btn-gold btn-full" style="margin-top:12px">Save Min Deposit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── DEPOSITS MANAGEMENT ─── -->
+        <div id="deposits-page" class="page-wrap">
+            <div class="card" style="padding:20px;margin-bottom:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">⏳ Pending Deposits</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>TrxID</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="deposits-pending-body">
+                            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card" style="padding:20px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📋 Deposit History</h3>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>TrxID</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="deposits-history-body">
+                            <tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── REFERRAL TASKS ─── -->
+        <div id="referral-tasks-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Referral Task</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Task Title</label><input id="reftask-title" type="text" placeholder="Invite 5 Friends" class="ep-input"></div>
+                    <div><label class="ep-label">Target (referrals needed)</label><input id="reftask-target" type="number" placeholder="5" class="ep-input"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div><label class="ep-label">Reward (৳)</label><input id="reftask-reward" type="number" placeholder="500" class="ep-input"></div>
+                    <div><label class="ep-label">Description</label><input id="reftask-desc" type="text" placeholder="Refer 5 users to earn..." class="ep-input"></div>
+                </div>
+                <button onclick="addReferralTask()" class="btn btn-gold">Add Referral Task</button>
+            </div>
+            <div class="card" style="padding:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🎯 All Referral Tasks</h3>
+                <div id="referral-tasks-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── ABOUT US ─── -->
+        <div id="about-page-admin" class="page-wrap">
+            <div class="card-gold" style="padding:24px;max-width:650px">
+                <h3 style="font-weight:700;color:white;margin-bottom:20px">ℹ️ About Us Content</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Title</label><input id="about-title" type="text" placeholder="About Earnplus" class="ep-input"></div>
+                <div style="margin-bottom:20px"><label class="ep-label">Content</label><textarea id="about-content" rows="8" placeholder="Write about your app..." class="ep-input"></textarea></div>
+                <button onclick="saveAboutUs()" class="btn btn-gold btn-full">Save About Us</button>
+                <div id="about-status" style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center"></div>
+            </div>
+        </div>
+
+        <!-- ─── APP CONFIG ─── -->
+        <div id="app-config-page" class="page-wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="card-gold" style="padding:24px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:20px">📱 App Download & Currency</h3>
+                    <div style="margin-bottom:12px"><label class="ep-label">App Download URL</label><input id="app-download-url" type="text" placeholder="https://play.google.com/..." class="ep-input"></div>
+                    <div style="margin-bottom:8px"><label class="ep-label">Currency System</label></div>
+                    <div style="display:flex;gap:12px;margin-bottom:20px">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:rgba(255,255,255,0.8);font-size:14px;font-weight:600">
+                            <input type="radio" name="currency-sys" id="currency-bdt" value="BDT" style="accent-color:#FFCA28"> BDT (৳ Taka)
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:rgba(255,255,255,0.8);font-size:14px;font-weight:600">
+                            <input type="radio" name="currency-sys" id="currency-usd" value="USD" style="accent-color:#FFCA28"> USD ($)
+                        </label>
+                    </div>
+                    <button onclick="saveAppConfig()" class="btn btn-gold btn-full">Save App Config</button>
+                    <div id="app-config-status" style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center"></div>
+                </div>
+                <div class="card" style="padding:24px">
+                    <h3 style="font-weight:700;color:white;margin-bottom:16px">ℹ️ Config Info</h3>
+                    <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.8">
+                        <div style="margin-bottom:8px">• <strong style="color:rgba(255,255,255,0.8)">App Download URL</strong> — User panel mein "Download App" button dikhega profile page mein</div>
+                        <div style="margin-bottom:8px">• <strong style="color:rgba(255,255,255,0.8)">BDT (৳)</strong> — Bangladesh Taka currency, balance mein ৳ symbol</div>
+                        <div style="margin-bottom:8px">• <strong style="color:rgba(255,255,255,0.8)">USD ($)</strong> — US Dollar currency, balance mein $ symbol</div>
+                        <div style="margin-bottom:8px">• Ye setting Firestore <code style="color:#FFCA28">config/main</code> mein save hoti hai</div>
+                        <div>• User panel automatically currency detect karke sab amounts update karta hai</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="maintenance-page" class="page-wrap">
+            <div class="card-gold" style="padding:24px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:20px">🔧 Maintenance Mode</h3>
+                <div style="margin-bottom:16px;padding:16px;background:rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:space-between">
+                    <div>
+                        <div style="font-weight:700;color:white;font-size:15px">Maintenance Status</div>
+                        <div style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:4px">When ON, all users see maintenance page</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:56px;height:28px;cursor:pointer">
+                        <input type="checkbox" id="maintenance-toggle" style="opacity:0;width:0;height:0" onchange="toggleMaintenance()">
+                        <span id="maintenance-slider-knob" style="position:absolute;inset:0;background:#374151;border-radius:28px;transition:0.3s">
+                            <span style="position:absolute;left:4px;bottom:4px;width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;display:block" id="maint-knob"></span>
+                        </span>
+                    </label>
+                </div>
+                <div style="margin-bottom:16px">
+                    <label class="ep-label">Maintenance Message</label>
+                    <textarea id="maintenance-message" rows="4" placeholder="We are currently upgrading our system. Please check back shortly." class="ep-input"></textarea>
+                </div>
+                <button onclick="saveMaintenance()" class="btn btn-gold btn-full">Save Maintenance Settings</button>
+                <div id="maintenance-status-display" style="margin-top:14px;padding:12px;border-radius:10px;font-size:13px;font-weight:600;text-align:center"></div>
+            </div>
+        </div>
+
+        <!-- ─── TASK RULES ─── -->
+        <div id="task-rules-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Task Rule</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Rule Text</label><textarea id="task-rule-text" rows="2" placeholder="e.g. Watch the full ad to earn reward" class="ep-input"></textarea></div>
+                <button onclick="addTaskRule()" class="btn btn-gold">Add Rule</button>
+            </div>
+            <div class="card" style="padding:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">📋 Task Rules (shown above tasks)</h3>
+                <div id="task-rules-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── WITHDRAWAL RULES ─── -->
+        <div id="withdrawal-rules-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Withdrawal Rule</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Rule Text</label><textarea id="withdrawal-rule-text" rows="2" placeholder="e.g. Minimum withdrawal is 500৳" class="ep-input"></textarea></div>
+                <button onclick="addWithdrawalRule()" class="btn btn-gold">Add Rule</button>
+            </div>
+            <div class="card" style="padding:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">💳 Withdrawal Rules (shown in wallet page)</h3>
+                <div id="withdrawal-rules-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── REFERRAL RULES ─── -->
+        <div id="referral-rules-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Referral Rule</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Rule Text</label><textarea id="referral-rule-text" rows="2" placeholder="e.g. Both referrer and friend earn 100৳" class="ep-input"></textarea></div>
+                <button onclick="addReferralRule()" class="btn btn-gold">Add Rule</button>
+            </div>
+            <div class="card" style="padding:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🤝 Referral Rules (shown in Refer & Earn)</h3>
+                <div id="referral-rules-list-admin"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── AUTH SLIDER (Login Page Slider) ─── -->
+        <div id="auth-slider-page" class="page-wrap">
+            <div class="card-gold" style="padding:20px;margin-bottom:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">➕ Add Login Slider Image</h3>
+                <div style="margin-bottom:12px"><label class="ep-label">Image URL</label><input id="auth-slider-img" type="text" placeholder="https://..." class="ep-input"></div>
+                <div style="margin-bottom:12px"><label class="ep-label">Title (Optional)</label><input id="auth-slider-title" type="text" placeholder="Welcome to Earnplus" class="ep-input"></div>
+                <button onclick="addAuthSlider()" class="btn btn-gold">Add Slider</button>
+            </div>
+            <div class="card" style="padding:20px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:16px">🖼️ Login Page Sliders</h3>
+                <div id="auth-sliders-list"><div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ─── TELEGRAM LINKS ─── -->
+        <div id="telegram-page" class="page-wrap">
+            <div class="card-gold" style="padding:24px;max-width:600px">
+                <h3 style="font-weight:700;color:white;margin-bottom:20px">✈️ Telegram Link Settings</h3>
+                <div style="margin-bottom:14px">
+                    <label class="ep-label">Support Link (Forgot Password / Home Button)</label>
+                    <input id="tg-support-link" type="text" placeholder="https://t.me/yourname" class="ep-input">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px">Used for: Forgot Password, Home Telegram button</div>
+                </div>
+                <div style="margin-bottom:20px">
+                    <label class="ep-label">Group Link (Join Telegram Group button in Profile)</label>
+                    <input id="tg-group-link" type="text" placeholder="https://t.me/yourgroup" class="ep-input">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px">Used for: Profile page "Join Telegram Group" button</div>
+                </div>
+                <button onclick="saveTelegramLinks()" class="btn btn-gold btn-full">Save Telegram Links</button>
+            </div>
+        </div>
+
+        <!-- ─── REGISTRATION BONUS ─── -->
+        <div id="reg-bonus-page" class="page-wrap">
+            <div class="card-gold" style="padding:24px;max-width:500px">
+                <h3 style="font-weight:700;color:white;margin-bottom:20px">🎁 Registration Bonus Settings</h3>
+                <div style="margin-bottom:20px">
+                    <label class="ep-label">Registration Bonus Amount (৳)</label>
+                    <input id="reg-bonus-amount" type="number" placeholder="50" class="ep-input">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px">This bonus is given to new users when they first sign up. One-time only.</div>
+                </div>
+                <button onclick="saveRegBonus()" class="btn btn-gold btn-full">Save Bonus Amount</button>
+                <div id="reg-bonus-status" style="margin-top:14px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center"></div>
+            </div>
+        </div>
+    </div><!-- /main-content -->
+
+</div><!-- /admin-panel -->
+
+<!-- ════ EDIT MODALS ════ -->
+
+<!-- Password Reset Modal -->
+<div id="pwd-reset-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">🔑 Send Password Reset <button class="modal-close" onclick="closeModal('pwd-reset-modal')">✕</button></div>
+        <input type="hidden" id="pwd-reset-doc-id">
+        <input type="hidden" id="pwd-reset-user-email">
+        <div style="padding:16px;background:rgba(91,95,255,0.1);border:1px solid rgba(91,95,255,0.3);border-radius:12px;margin-bottom:16px">
+            <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:6px">Reset email will be sent to:</div>
+            <div id="pwd-reset-email-display" style="color:#FFCA28;font-weight:700;font-size:15px"></div>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:20px">
+            Firebase একটি <strong style="color:white">Password Reset Link</strong> user এর email এ পাঠাবে।<br>
+            User সেই link এ click করে নিজেই নতুন password set করবে।
+        </div>
+        <button onclick="confirmResetPassword()" class="btn btn-gold btn-full">📧 Send Reset Email</button>
+    </div>
+</div>
+
+<!-- Plan Task Edit Modal -->
+<div id="plan-task-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Task <button class="modal-close" onclick="closeModal('plan-task-modal')">✕</button></div>
+        <input type="hidden" id="edit-pt-id">
+        <input type="hidden" id="edit-pt-plan-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Task Name</label><input id="edit-pt-name" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Ad Link URL</label><input id="edit-pt-url" type="text" class="ep-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+            <div><label class="ep-label">Reward (৳)</label><input id="edit-pt-reward" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Timer (sec)</label><input id="edit-pt-timer" type="number" min="15" class="ep-input"></div>
+            <div><label class="ep-label">Emoji</label><input id="edit-pt-emoji" type="text" class="ep-input"></div>
+        </div>
+        <button onclick="savePlanTaskEdit()" class="btn btn-gold btn-full">Save Changes</button>
+    </div>
+</div>
+
+<!-- Plan Edit Modal -->
+<div id="plan-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Plan <button class="modal-close" onclick="closeModal('plan-modal')">✕</button></div>
+        <input type="hidden" id="edit-plan-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Plan Name</label><input id="edit-plan-name" type="text" class="ep-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div><label class="ep-label">Price (৳)</label><input id="edit-plan-price" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Daily Limit</label><input id="edit-plan-daily-limit" type="number" class="ep-input"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div><label class="ep-label">Daily Earnings (৳)</label><input id="edit-plan-daily-earn" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Duration (days)</label><input id="edit-plan-duration" type="number" class="ep-input"></div>
+        </div>
+        <div style="margin-bottom:12px"><label class="ep-label">Images (comma separated)</label><input id="edit-plan-images" type="text" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Description</label><textarea id="edit-plan-desc" rows="2" class="ep-input"></textarea></div>
+        <button onclick="savePlanEdit()" class="btn btn-gold btn-full">Save Changes</button>
+    </div>
+</div>
+
+<!-- Deposit Method Edit Modal -->
+<div id="dm-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Method <button class="modal-close" onclick="closeModal('dm-modal')">✕</button></div>
+        <input type="hidden" id="edit-dm-key">
+        <div style="margin-bottom:12px"><label class="ep-label">Display Name</label><input id="edit-dm-name" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Icon URL</label><input id="edit-dm-icon" type="text" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Wallet / Phone</label><input id="edit-dm-wallet" type="text" class="ep-input"></div>
+        <button onclick="saveDmEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Referral Task Edit Modal -->
+<div id="reftask-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Referral Task <button class="modal-close" onclick="closeModal('reftask-modal')">✕</button></div>
+        <input type="hidden" id="edit-reftask-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Title</label><input id="edit-reftask-title" type="text" class="ep-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div><label class="ep-label">Target</label><input id="edit-reftask-target" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Reward (৳)</label><input id="edit-reftask-reward" type="number" class="ep-input"></div>
+        </div>
+        <div style="margin-bottom:16px"><label class="ep-label">Description</label><input id="edit-reftask-desc" type="text" class="ep-input"></div>
+        <button onclick="saveReftaskEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Category Edit Modal -->
+
+<div id="cat-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Category <button class="modal-close" onclick="closeModal('cat-modal')">✕</button></div>
+        <input type="hidden" id="edit-cat-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Name</label><input id="edit-cat-name" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Image URL</label><input id="edit-cat-img" type="text" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Emoji</label><input id="edit-cat-emoji" type="text" class="ep-input"></div>
+        <button onclick="saveCategoryEdit()" class="btn btn-gold btn-full">Save Changes</button>
+    </div>
+</div>
+
+<!-- Task Edit Modal -->
+<div id="task-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Task <button class="modal-close" onclick="closeModal('task-modal')">✕</button></div>
+        <input type="hidden" id="edit-task-id">
+        <input type="hidden" id="edit-task-cat-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Task Name</label><input id="edit-task-name" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Ad Link URL</label><input id="edit-task-url" type="text" class="ep-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+            <div><label class="ep-label">Reward (৳)</label><input id="edit-task-reward" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Timer (sec)</label><input id="edit-task-timer" type="number" min="15" class="ep-input"></div>
+            <div><label class="ep-label">Emoji</label><input id="edit-task-emoji" type="text" class="ep-input"></div>
+        </div>
+        <button onclick="saveTaskEdit()" class="btn btn-gold btn-full">Save Changes</button>
+    </div>
+</div>
+
+<!-- User Balance Modal -->
+<div id="balance-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit User Balance <button class="modal-close" onclick="closeModal('balance-modal')">✕</button></div>
+        <input type="hidden" id="edit-bal-uid">
+        <div style="margin-bottom:6px;color:rgba(255,255,255,0.5);font-size:13px" id="edit-bal-info"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">New Balance (৳)</label><input id="edit-bal-value" type="number" class="ep-input"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <button onclick="applyBalance('set')" class="btn btn-blue">Set</button>
+            <button onclick="applyBalance('add')" class="btn btn-green">+ Add</button>
+            <button onclick="applyBalance('deduct')" class="btn btn-red">- Deduct</button>
+        </div>
+    </div>
+</div>
+
+<!-- Slider Edit Modal -->
+<div id="slider-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Slider <button class="modal-close" onclick="closeModal('slider-modal')">✕</button></div>
+        <input type="hidden" id="edit-slider-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Image URL</label><input id="edit-slider-img" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Click Link</label><input id="edit-slider-link" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Title</label><input id="edit-slider-title" type="text" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Speed (ms)</label><input id="edit-slider-speed" type="number" class="ep-input"></div>
+        <button onclick="saveSliderEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Offer Edit Modal -->
+<div id="offer-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Offer <button class="modal-close" onclick="closeModal('offer-modal')">✕</button></div>
+        <input type="hidden" id="edit-offer-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Title</label><input id="edit-offer-title" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Image URL</label><input id="edit-offer-img" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Description</label><textarea id="edit-offer-desc" rows="3" class="ep-input"></textarea></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Link</label><input id="edit-offer-link" type="text" class="ep-input"></div>
+        <button onclick="saveOfferEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Notice Edit Modal -->
+<div id="notice-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Notice <button class="modal-close" onclick="closeModal('notice-modal')">✕</button></div>
+        <input type="hidden" id="edit-notice-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Notice Text</label><input id="edit-notice-text" type="text" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Speed (seconds)</label><input id="edit-notice-speed" type="number" class="ep-input"></div>
+        <button onclick="saveNoticeEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Withdraw Ticker Edit Modal -->
+<div id="wtick-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Entry <button class="modal-close" onclick="closeModal('wtick-modal')">✕</button></div>
+        <input type="hidden" id="edit-wtick-id">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div><label class="ep-label">Username</label><input id="edit-wtick-user" type="text" class="ep-input"></div>
+            <div><label class="ep-label">Masked Number</label><input id="edit-wtick-num" type="text" class="ep-input"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+            <div><label class="ep-label">Method</label><select id="edit-wtick-method" class="ep-input"><option>bKash</option><option>Nagad</option><option>Rocket</option></select></div>
+            <div><label class="ep-label">Amount</label><input id="edit-wtick-amount" type="number" class="ep-input"></div>
+            <div><label class="ep-label">Speed (s)</label><input id="edit-wtick-speed" type="number" class="ep-input"></div>
+        </div>
+        <button onclick="saveWtickEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Leaderboard Edit Modal -->
+<div id="lb-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Leaderboard <button class="modal-close" onclick="closeModal('lb-modal')">✕</button></div>
+        <input type="hidden" id="edit-lb-id">
+        <div style="margin-bottom:12px"><label class="ep-label">Username</label><input id="edit-lb-user" type="text" class="ep-input"></div>
+        <div style="margin-bottom:12px"><label class="ep-label">Total Earned (৳)</label><input id="edit-lb-earned" type="number" class="ep-input"></div>
+        <div style="margin-bottom:16px"><label class="ep-label">Profile Image URL</label><input id="edit-lb-img" type="text" class="ep-input"></div>
+        <button onclick="saveLbEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<!-- Rule Edit Modal -->
+<div id="rule-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Edit Rule <button class="modal-close" onclick="closeModal('rule-modal')">✕</button></div>
+        <input type="hidden" id="edit-rule-id">
+        <div style="margin-bottom:16px"><label class="ep-label">Rule Text</label><textarea id="edit-rule-text" rows="4" class="ep-input"></textarea></div>
+        <button onclick="saveRuleEdit()" class="btn btn-gold btn-full">Save</button>
+    </div>
+</div>
+
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyARJgpEsdK2vr0gha5_1vDUdakE4OpQbvE",
+  authDomain: "bdzone-70a26.firebaseapp.com",
+  databaseURL: "https://bdzone-70a26-default-rtdb.firebaseio.com",
+  projectId: "bdzone-70a26",
+  storageBucket: "bdzone-70a26.firebasestorage.app",
+  messagingSenderId: "172711541080",
+  appId: "1:172711541080:web:4a38ee477d0fc8d9fe0d2d"
+};
+
+const ADMIN_UIDS = ["Wq3Wi0kpvSdwasHgN4QEORKTsf52"];
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getDatabase, ref, set, get, push, remove, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
+
+let allUsers = [];
+let sidebarOpen = true;
+
+// ─── TOAST ───
+function toast(msg, type='success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = `show ${type}`;
+    setTimeout(() => el.className = '', 3000);
+}
+window.toast = toast;
+
+// ─── SIDEBAR ───
+window.toggleSidebar = function() {
+    sidebarOpen = !sidebarOpen;
+    document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+    document.getElementById('main-content').classList.toggle('expanded', !sidebarOpen);
+};
+
+// ─── NAV ───
+window.navTo = function(pageId, title) {
+    document.querySelectorAll('.page-wrap').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById(pageId);
+    if (el) { el.classList.add('active'); }
+    document.getElementById('page-title').textContent = title;
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === pageId));
+    if (pageId === 'withdrawals-page') { loadPendingWithdrawals(); loadWithdrawalHistory(); }
+    if (pageId === 'notifications-page') loadAllNotifications();
+    if (pageId === 'settings-page') { loadSettings(); loadAdsWatched(); }
+    if (pageId === 'plans-page') loadPlans();
+    if (pageId === 'slider-page') loadSliders();
+    if (pageId === 'offers-page') loadOffers();
+    if (pageId === 'popup-page') loadPopupStatus();
+    if (pageId === 'notices-page') loadNotices();
+    if (pageId === 'withdraw-ticker-page') loadWtickList();
+    if (pageId === 'leaderboard-page') loadLeaderboard();
+    if (pageId === 'rules-page') loadRules();
+    if (pageId === 'users-page') renderUsers();
+    if (pageId === 'maintenance-page') loadMaintenanceSettings();
+    if (pageId === 'task-rules-page') loadTaskRules();
+    if (pageId === 'withdrawal-rules-page') loadWithdrawalRulesAdmin();
+    if (pageId === 'referral-rules-page') loadReferralRulesAdmin();
+    if (pageId === 'auth-slider-page') loadAuthSliders();
+    if (pageId === 'telegram-page') loadTelegramLinks();
+    if (pageId === 'monetag-page') loadMonetag();
+    if (pageId === 'reg-bonus-page') loadRegBonus();
+    if (pageId === 'password-resets-page') loadPasswordResets();
+    if (pageId === 'deposit-methods-page') loadDepositMethods();
+    if (pageId === 'deposit-settings-page') { loadDepositRules(); loadDepositPendingNotice(); loadDepositCommission(); loadDepositAmounts(); }
+    if (pageId === 'deposits-page') { loadPendingDeposits(); loadDepositHistory(); }
+    if (pageId === 'referral-tasks-page') loadReferralTasks();
+    if (pageId === 'about-page-admin') loadAboutUsAdmin();
+    if (pageId === 'app-config-page') loadAppConfig();
+};
+
+// ─── MODAL ───
+window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+
+// ─── AUTH ───
+window.onload = () => {
+    lucide.createIcons();
+    document.getElementById('admin-login-btn').addEventListener('click', handleLogin);
+    onAuthStateChanged(auth, user => {
+        document.getElementById('loader').classList.add('hidden');
+        if (user && ADMIN_UIDS.includes(user.uid)) {
+            document.getElementById('login-page').classList.remove('show');
+            document.getElementById('admin-panel').style.display = 'block';
+            initAdmin();
+        } else {
+            document.getElementById('login-page').classList.add('show');
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+    });
+};
+
+async function handleLogin() {
+    const email = document.getElementById('admin-email').value;
+    const pw = document.getElementById('admin-password').value;
+    document.getElementById('loader').classList.remove('hidden');
+    try {
+        const cred = await signInWithEmailAndPassword(auth, email, pw);
+        if (!ADMIN_UIDS.includes(cred.user.uid)) { await signOut(auth); toast("Unauthorized!", "error"); }
+    } catch(e) { toast(e.message, "error"); }
+    document.getElementById('loader').classList.add('hidden');
+}
+
+window.handleLogout = async function() { await signOut(auth); };
+
+function initAdmin() {
+    loadDashboard();
+    loadUsersData();
+}
+
+// ─── DASHBOARD ───
+function loadDashboard() {
+    onSnapshot(collection(db, "users"), s => {
+        document.getElementById('stat-users').textContent = s.size;
+        let tasks = 0;
+        s.forEach(d => { tasks += d.data().dailyAdCount || 0; });
+        document.getElementById('stat-tasks').textContent = tasks;
+    });
+    onSnapshot(query(collection(db, "withdrawals"), where("status","==","pending")), s => {
+        document.getElementById('stat-pending').textContent = s.size;
+    });
+    onSnapshot(query(collection(db, "withdrawals"), where("status","==","approved")), s => {
+        document.getElementById('stat-approved').textContent = s.size;
+    });
+    onSnapshot(query(collection(db, "deposits"), where("status","==","pending")), s => {
+        document.getElementById('stat-deposits-pending').textContent = s.size;
+    });
+    onSnapshot(collection(db, "deposits"), s => {
+        document.getElementById('stat-deposits-total').textContent = s.size;
+    });
+    // Pending in dashboard
+    const q = query(collection(db, "withdrawals"), where("status","==","pending"));
+    onSnapshot(q, snap => {
+        const body = document.getElementById('dash-pending-body');
+        if (snap.empty) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:20px">No pending requests</td></tr>'; return; }
+        body.innerHTML = '';
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.requestedAt?.toDate().toLocaleDateString() || 'N/A';
+            body.innerHTML += `<tr>
+                <td>${d.userName||'N/A'}</td><td>${d.amount}৳</td><td>${d.method}</td><td>${d.paymentDetail}</td><td>${date}</td>
+                <td style="display:flex;gap:6px">
+                    <button class="btn btn-green" onclick="window.approveW('${docSnap.id}')">✓ Approve</button>
+                    <button class="btn btn-red" onclick="window.rejectW('${docSnap.id}')">✗ Reject</button>
+                </td></tr>`;
+        });
+    });
+}
+
+// ─── USERS ───
+function loadUsersData() {
+    onSnapshot(collection(db, "users"), snap => {
+        allUsers = [];
+        snap.forEach(d => allUsers.push({ id: d.id, ...d.data() }));
+        renderUsers();
+        loadAdsWatched();
+    });
+}
+
+function renderUsers(filter='') {
+    const body = document.getElementById('users-table-body');
+    if (!body) return;
+    const filtered = filter ? allUsers.filter(u => (u.name||'').toLowerCase().includes(filter) || (u.email||'').toLowerCase().includes(filter) || (u.numericId||'').includes(filter)) : allUsers;
+    if (!filtered.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">No users found</td></tr>'; return; }
+    body.innerHTML = filtered.map(u => {
+        const numericUid = u.numericId || (u.id ? u.id.replace(/\D/g,'').slice(-7).padStart(7,'0') : 'N/A');
+        return `<tr>
+        <td><span style="font-family:monospace;font-size:12px;color:#FFCA28;font-weight:700">${numericUid}</span></td>
+        <td style="font-weight:600">${u.name||'N/A'}</td>
+        <td style="color:rgba(255,255,255,0.6);font-size:12px">${u.email}</td>
+        <td style="font-weight:700;color:#FFCA28">${u.balance||0}৳</td>
+        <td style="color:#34d399">${u.todayEarned||0}৳</td>
+        <td>${u.referralCount||0}</td>
+        <td><span class="badge ${u.isBlocked?'badge-red':'badge-green'}">${u.isBlocked?'Blocked':'Active'}</span></td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-blue" style="font-size:11px;padding:6px 10px" onclick="window.openBalanceModal('${u.id}',${u.balance||0},'${u.name||''}')">💰</button>
+            <button class="btn btn-dark" style="font-size:11px;padding:6px 10px" onclick="window.toggleBlock('${u.id}',${!!u.isBlocked})">${u.isBlocked?'Unblock':'Block'}</button>
+            <button class="btn btn-dark" style="font-size:11px;padding:6px 10px" onclick="window.resetAds('${u.id}')">Reset</button>
+            <button class="btn btn-red" style="font-size:11px;padding:6px 10px" onclick="window.delUser('${u.id}')">Del</button>
+        </div></td>
+    </tr>`;
+    }).join('');
+}
+window.filterUsers = function() { renderUsers(document.getElementById('user-search').value.toLowerCase()); };
+
+window.toggleBlock = async (uid, isBlocked) => {
+    if (!confirm(`${isBlocked?'Unblock':'Block'} this user?`)) return;
+    await updateDoc(doc(db,"users",uid), { isBlocked: !isBlocked });
+    toast(isBlocked?'User unblocked':'User blocked');
+};
+window.delUser = async (uid) => {
+    if (!confirm("Permanently delete user?")) return;
+    await deleteDoc(doc(db,"users",uid));
+    toast("User deleted");
+};
+window.resetAds = async (uid) => {
+    await updateDoc(doc(db,"users",uid), { dailyAdCount: 0 });
+    toast("Task count reset");
+};
+window.openBalanceModal = function(uid, bal, name) {
+    document.getElementById('edit-bal-uid').value = uid;
+    document.getElementById('edit-bal-info').textContent = `${name} — Current: ${bal}৳`;
+    document.getElementById('edit-bal-value').value = '';
+    openModal('balance-modal');
+};
+window.applyBalance = async function(action) {
+    const uid = document.getElementById('edit-bal-uid').value;
+    const val = parseFloat(document.getElementById('edit-bal-value').value);
+    if (isNaN(val) || val < 0) { toast("Invalid amount","error"); return; }
+    const user = allUsers.find(u => u.id === uid);
+    if (!user) return;
+    let newBal = user.balance || 0;
+    if (action === 'set') newBal = val;
+    else if (action === 'add') newBal += val;
+    else if (action === 'deduct') newBal = Math.max(0, newBal - val);
+    await updateDoc(doc(db,"users",uid), { balance: newBal });
+    toast(`Balance updated to ${newBal}৳`);
+    closeModal('balance-modal');
+};
+
+// ─── WITHDRAWALS ───
+function loadPendingWithdrawals() {
+    const body = document.getElementById('withdrawals-table-body');
+    onSnapshot(query(collection(db,"withdrawals"),where("status","==","pending")), snap => {
+        if (snap.empty) { body.innerHTML='<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">No pending</td></tr>'; return; }
+        body.innerHTML = '';
+        snap.forEach(d => {
+            const data = d.data(), date = data.requestedAt?.toDate().toLocaleDateString()||'N/A';
+            body.innerHTML += `<tr><td>${data.userName}</td><td style="font-weight:700;color:#FFCA28">${data.amount}৳</td><td>${data.method}</td><td>${data.paymentDetail}</td><td>${date}</td>
+                <td style="display:flex;gap:6px"><button class="btn btn-green" onclick="window.approveW('${d.id}')">Approve</button><button class="btn btn-red" onclick="window.rejectW('${d.id}')">Reject</button></td></tr>`;
+        });
+    });
+}
+function loadWithdrawalHistory() {
+    const body = document.getElementById('withdrawal-history-body');
+    onSnapshot(query(collection(db,"withdrawals"),where("status","in",["approved","rejected"])), snap => {
+        if (snap.empty) { body.innerHTML='<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">No history</td></tr>'; return; }
+        const docs = [];
+        snap.forEach(d => docs.push({id:d.id,...d.data()}));
+        docs.sort((a,b)=>(b.requestedAt?.toDate()||0)-(a.requestedAt?.toDate()||0));
+        body.innerHTML = docs.map(d => {
+            const cls = d.status==='approved'?'badge-green':'badge-red';
+            return `<tr><td>${d.userName}</td><td style="font-weight:700">${d.amount}৳</td><td>${d.method}</td>
+                <td><span class="badge ${cls}">${d.status}</span></td>
+                <td>${d.requestedAt?.toDate().toLocaleDateString()||'N/A'}</td>
+                <td><button class="btn btn-red" onclick="window.delW('${d.id}')">Delete</button></td></tr>`;
+        }).join('');
+    });
+}
+window.approveW = async function(id) {
+    if (!confirm("Approve withdrawal?")) return;
+    await updateDoc(doc(db,"withdrawals",id), { status:"approved" });
+    toast("Approved ✓");
+};
+window.rejectW = async function(id) {
+    if (!confirm("Reject and refund?")) return;
+    const snap = await getDoc(doc(db,"withdrawals",id));
+    if (snap.exists()) {
+        const d = snap.data();
+        const uSnap = await getDoc(doc(db,"users",d.userId));
+        if (uSnap.exists()) await updateDoc(doc(db,"users",d.userId),{balance:(uSnap.data().balance||0)+d.amount});
+    }
+    await updateDoc(doc(db,"withdrawals",id),{status:"rejected"});
+    toast("Rejected & refunded");
+};
+window.delW = async function(id) {
+    if (!confirm("Delete record?")) return;
+    await deleteDoc(doc(db,"withdrawals",id));
+    toast("Deleted");
+};
+
+// ─── NOTIFICATIONS ───
+function loadAllNotifications() {
+    const body = document.getElementById('all-notifications-body');
+    onSnapshot(query(collection(db,"notifications"),orderBy("createdAt","desc")), snap => {
+        if (snap.empty) { body.innerHTML='<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">None</td></tr>'; return; }
+        body.innerHTML = '';
+        snap.forEach(d => {
+            const data = d.data(), date = data.createdAt?.toDate().toLocaleDateString()||'N/A';
+            body.innerHTML += `<tr><td style="font-weight:700">${data.title}</td><td style="color:rgba(255,255,255,0.6)">${data.message}</td><td>${date}</td>
+                <td><button class="btn btn-red" onclick="window.delGlobalNotif('${d.id}')">Delete</button></td></tr>`;
+        });
+    });
+}
+window.sendToAll = async function() {
+    const title = document.getElementById('notif-title-all').value.trim();
+    const msg = document.getElementById('notif-msg-all').value.trim();
+    if (!title||!msg) { toast("Fill all fields","error"); return; }
+    await addDoc(collection(db,"notifications"),{title,message:msg,createdAt:serverTimestamp()});
+    toast("Sent to all users!");
+    document.getElementById('notif-title-all').value='';
+    document.getElementById('notif-msg-all').value='';
+};
+window.sendToUser = async function() {
+    const email = document.getElementById('notif-email').value.trim();
+    const title = document.getElementById('notif-title-spec').value.trim();
+    const msg = document.getElementById('notif-msg-spec').value.trim();
+    if (!email||!title||!msg) { toast("Fill all fields","error"); return; }
+    const snap = await getDocs(query(collection(db,"users"),where("email","==",email)));
+    if (snap.empty) { toast("User not found","error"); return; }
+    await addDoc(collection(db,"users",snap.docs[0].id,"notifications"),{title,message:msg,createdAt:serverTimestamp()});
+    toast("Sent!");
+    ['notif-email','notif-title-spec','notif-msg-spec'].forEach(id => document.getElementById(id).value='');
+};
+window.loadSpecificUserNotifications = async function() {
+    const email = document.getElementById('specific-history-email').value.trim();
+    const body = document.getElementById('specific-notifications-body');
+    if (!email) { toast("Enter email","error"); return; }
+    const snap = await getDocs(query(collection(db,"users"),where("email","==",email)));
+    if (snap.empty) { body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px">User not found</td></tr>'; return; }
+    const uid = snap.docs[0].id;
+    onSnapshot(query(collection(db,"users",uid,"notifications"),orderBy("createdAt","desc")), nSnap => {
+        if (nSnap.empty) { body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px">No notifications</td></tr>'; return; }
+        body.innerHTML = '';
+        nSnap.forEach(d => {
+            const data = d.data(), date = data.createdAt?.toDate().toLocaleDateString()||'N/A';
+            body.innerHTML += `<tr><td style="font-weight:700">${data.title}</td><td>${data.message}</td><td>${date}</td>
+                <td><button class="btn btn-red" onclick="window.delPersonalNotif('${uid}','${d.id}')">Delete</button></td></tr>`;
+        });
+    });
+};
+window.delGlobalNotif = async function(id) { if (!confirm("Delete?")) return; await deleteDoc(doc(db,"notifications",id)); toast("Deleted"); };
+window.delPersonalNotif = async function(uid,id) { if (!confirm("Delete?")) return; await deleteDoc(doc(db,"users",uid,"notifications",id)); toast("Deleted"); };
+
+// ─── SETTINGS ───
+async function loadSettings() {
+    const snap = await getDoc(doc(db,"config","main"));
+    if (snap.exists()) {
+        const d = snap.data();
+        document.getElementById('min-withdrawal').value = d.minWithdrawal||'';
+        document.getElementById('daily-ad-limit').value = d.dailyAdLimit||'';
+        document.getElementById('referral-reward').value = d.referralReward||'';
+        document.getElementById('telegram-username').value = d.telegramUsername||'';
+        document.getElementById('payment-methods').value = (d.paymentMethods||[]).join(', ');
+    }
+}
+window.saveSettings = async function() {
+    const data = {
+        minWithdrawal: parseInt(document.getElementById('min-withdrawal').value)||500,
+        dailyAdLimit: parseInt(document.getElementById('daily-ad-limit').value)||10,
+        referralReward: parseInt(document.getElementById('referral-reward').value)||100,
+        telegramUsername: document.getElementById('telegram-username').value.trim(),
+        paymentMethods: document.getElementById('payment-methods').value.split(',').map(s=>s.trim()).filter(Boolean)
+    };
+    await setDoc(doc(db,"config","main"),data,{merge:true});
+    toast("Settings saved!");
+};
+function loadAdsWatched() {
+    const body = document.getElementById('ads-watched-body');
+    if (!body) return;
+    if (!allUsers.length) { body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px">Loading...</td></tr>'; return; }
+    body.innerHTML = allUsers.map(u => `<tr>
+        <td>${u.name||'N/A'}</td>
+        <td style="color:rgba(255,255,255,0.6);font-size:12px">${u.email}</td>
+        <td><span class="badge badge-yellow">${u.dailyAdCount||0}</span></td>
+        <td><button class="btn btn-dark" style="font-size:12px;padding:6px 12px" onclick="window.resetAds('${u.id}')">Reset</button></td>
+    </tr>`).join('');
+}
+
+
+// ─── RTDB: SLIDER ───
+async function loadSliders() {
+    const snap = await get(ref(rtdb,'sliders'));
+    const el = document.getElementById('sliders-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No sliders</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,s])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="width:80px;height:48px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05)">
+                ${s.imageUrl?`<img src="${s.imageUrl}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+            <div style="flex:1">
+                <div style="font-weight:600;color:white">${s.title||'Banner'}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.4)">${s.link||'No link'} • ${s.speed||3000}ms</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editSlider('${id}','${(s.imageUrl||'').replace(/'/g,"\\'")}','${(s.link||'').replace(/'/g,"\\'")}','${s.title||''}',${s.speed||3000})">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delSlider('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addSlider = async function() {
+    const img = document.getElementById('slider-img').value.trim();
+    const link = document.getElementById('slider-link').value.trim();
+    const title = document.getElementById('slider-title').value.trim();
+    const speed = parseInt(document.getElementById('slider-speed').value)||3000;
+    if (!img) { toast("Enter image URL","error"); return; }
+    await set(push(ref(rtdb,'sliders')),{imageUrl:img,link,title,speed});
+    toast("Slider added!"); ['slider-img','slider-link','slider-title','slider-speed'].forEach(id=>document.getElementById(id).value=''); loadSliders();
+};
+window.editSlider = function(id,img,link,title,speed) {
+    document.getElementById('edit-slider-id').value=id;
+    document.getElementById('edit-slider-img').value=img;
+    document.getElementById('edit-slider-link').value=link;
+    document.getElementById('edit-slider-title').value=title;
+    document.getElementById('edit-slider-speed').value=speed;
+    openModal('slider-modal');
+};
+window.saveSliderEdit = async function() {
+    const id=document.getElementById('edit-slider-id').value;
+    await update(ref(rtdb,`sliders/${id}`),{
+        imageUrl:document.getElementById('edit-slider-img').value.trim(),
+        link:document.getElementById('edit-slider-link').value.trim(),
+        title:document.getElementById('edit-slider-title').value.trim(),
+        speed:parseInt(document.getElementById('edit-slider-speed').value)||3000
+    });
+    toast("Saved!"); closeModal('slider-modal'); loadSliders();
+};
+window.delSlider = async function(id) {
+    if (!confirm("Delete slider?")) return;
+    await remove(ref(rtdb,`sliders/${id}`)); toast("Deleted"); loadSliders();
+};
+
+// ─── RTDB: OFFERS ───
+async function loadOffers() {
+    const snap = await get(ref(rtdb,'offers'));
+    const el = document.getElementById('offers-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No offers</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,o])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="width:60px;height:44px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05)">
+                ${o.imageUrl?`<img src="${o.imageUrl}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+            <div style="flex:1">
+                <div style="font-weight:600;color:white">${o.title}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.4)">${(o.description||'').substring(0,50)}...</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editOffer('${id}','${(o.title||'').replace(/'/g,"\\'")}','${(o.imageUrl||'').replace(/'/g,"\\'")}','${(o.description||'').replace(/'/g,"\\'").replace(/\n/g,' ')}','${(o.link||'').replace(/'/g,"\\'")}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delOffer('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addOffer = async function() {
+    const title=document.getElementById('offer-title').value.trim(), img=document.getElementById('offer-img').value.trim(),
+          desc=document.getElementById('offer-desc').value.trim(), link=document.getElementById('offer-link').value.trim();
+    if (!title) { toast("Enter title","error"); return; }
+    await set(push(ref(rtdb,'offers')),{title,imageUrl:img,description:desc,link});
+    toast("Offer added!"); ['offer-title','offer-img','offer-desc','offer-link'].forEach(id=>document.getElementById(id).value=''); loadOffers();
+};
+window.editOffer = function(id,title,img,desc,link) {
+    document.getElementById('edit-offer-id').value=id;
+    document.getElementById('edit-offer-title').value=title;
+    document.getElementById('edit-offer-img').value=img;
+    document.getElementById('edit-offer-desc').value=desc;
+    document.getElementById('edit-offer-link').value=link;
+    openModal('offer-modal');
+};
+window.saveOfferEdit = async function() {
+    const id=document.getElementById('edit-offer-id').value;
+    await update(ref(rtdb,`offers/${id}`),{
+        title:document.getElementById('edit-offer-title').value.trim(),
+        imageUrl:document.getElementById('edit-offer-img').value.trim(),
+        description:document.getElementById('edit-offer-desc').value.trim(),
+        link:document.getElementById('edit-offer-link').value.trim()
+    });
+    toast("Saved!"); closeModal('offer-modal'); loadOffers();
+};
+window.delOffer = async function(id) {
+    if (!confirm("Delete offer?")) return;
+    await remove(ref(rtdb,`offers/${id}`)); toast("Deleted"); loadOffers();
+};
+
+// ─── RTDB: POPUP NOTICE ───
+async function loadPopupStatus() {
+    const snap = await get(ref(rtdb,'popupNotice'));
+    const d = snap.val() || {};
+    document.getElementById('popup-title').value = d.title||'';
+    document.getElementById('popup-desc').value = d.description||'';
+    document.getElementById('popup-active').checked = !!d.active;
+    document.getElementById('popup-status').textContent = d.active ? `✅ Active — "${d.title}"` : '❌ Currently disabled';
+}
+window.savePopupNotice = async function() {
+    const title=document.getElementById('popup-title').value.trim(), desc=document.getElementById('popup-desc').value.trim(), active=document.getElementById('popup-active').checked;
+    await set(ref(rtdb,'popupNotice'),{title,description:desc,active});
+    toast("Popup notice saved!"); loadPopupStatus();
+};
+
+// ─── RTDB: NOTICES ───
+async function loadNotices() {
+    const snap = await get(ref(rtdb,'notices'));
+    const el = document.getElementById('notices-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No notices</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,n])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:14px">${n.text} <span style="color:rgba(255,255,255,0.3);font-size:11px">(${n.speed||20}s)</span></div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editNotice('${id}','${(n.text||'').replace(/'/g,"\\'")}',${n.speed||20})">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delNotice('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addNotice = async function() {
+    const text=document.getElementById('notice-text').value.trim(), speed=parseInt(document.getElementById('notice-speed').value)||20;
+    if (!text) { toast("Enter notice text","error"); return; }
+    await set(push(ref(rtdb,'notices')),{text,speed});
+    toast("Notice added!"); ['notice-text','notice-speed'].forEach(id=>document.getElementById(id).value=''); loadNotices();
+};
+window.editNotice = function(id,text,speed) {
+    document.getElementById('edit-notice-id').value=id;
+    document.getElementById('edit-notice-text').value=text;
+    document.getElementById('edit-notice-speed').value=speed;
+    openModal('notice-modal');
+};
+window.saveNoticeEdit = async function() {
+    const id=document.getElementById('edit-notice-id').value;
+    await update(ref(rtdb,`notices/${id}`),{text:document.getElementById('edit-notice-text').value.trim(),speed:parseInt(document.getElementById('edit-notice-speed').value)||20});
+    toast("Saved!"); closeModal('notice-modal'); loadNotices();
+};
+window.delNotice = async function(id) {
+    if (!confirm("Delete notice?")) return;
+    await remove(ref(rtdb,`notices/${id}`)); toast("Deleted"); loadNotices();
+};
+
+// ─── RTDB: WITHDRAW TICKER ───
+async function loadWtickList() {
+    const snap = await get(ref(rtdb,'withdrawTicker'));
+    const el = document.getElementById('wtick-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No entries</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,w])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="flex:1">
+                <span style="font-weight:700;color:white">${w.username}</span>
+                <span style="color:rgba(255,255,255,0.4);font-size:12px"> • ${w.maskedNumber} • ${w.method}</span>
+                <span style="color:#34d399;font-weight:700"> ${w.amount}৳</span>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editWtick('${id}','${w.username||''}','${w.maskedNumber||''}','${w.method||'bKash'}',${w.amount||0},${w.speed||12})">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delWtick('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addWithdrawTick = async function() {
+    const user=document.getElementById('wtick-user').value.trim(), num=document.getElementById('wtick-num').value.trim(),
+          method=document.getElementById('wtick-method').value, amount=parseInt(document.getElementById('wtick-amount').value)||0,
+          speed=parseInt(document.getElementById('wtick-speed').value)||12;
+    if (!user) { toast("Enter username","error"); return; }
+    await set(push(ref(rtdb,'withdrawTicker')),{username:user,maskedNumber:num,method,amount,speed});
+    toast("Entry added!"); loadWtickList();
+};
+window.editWtick = function(id,user,num,method,amount,speed) {
+    document.getElementById('edit-wtick-id').value=id;
+    document.getElementById('edit-wtick-user').value=user;
+    document.getElementById('edit-wtick-num').value=num;
+    document.getElementById('edit-wtick-method').value=method;
+    document.getElementById('edit-wtick-amount').value=amount;
+    document.getElementById('edit-wtick-speed').value=speed;
+    openModal('wtick-modal');
+};
+window.saveWtickEdit = async function() {
+    const id=document.getElementById('edit-wtick-id').value;
+    await update(ref(rtdb,`withdrawTicker/${id}`),{
+        username:document.getElementById('edit-wtick-user').value.trim(),
+        maskedNumber:document.getElementById('edit-wtick-num').value.trim(),
+        method:document.getElementById('edit-wtick-method').value,
+        amount:parseInt(document.getElementById('edit-wtick-amount').value)||0,
+        speed:parseInt(document.getElementById('edit-wtick-speed').value)||12
+    });
+    toast("Saved!"); closeModal('wtick-modal'); loadWtickList();
+};
+window.delWtick = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`withdrawTicker/${id}`)); toast("Deleted"); loadWtickList();
+};
+
+// ─── RTDB: LEADERBOARD ───
+async function loadLeaderboard() {
+    const snap = await get(ref(rtdb,'leaderboard'));
+    const el = document.getElementById('lb-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No entries</div>'; return; }
+    const items = Object.entries(snap.val()).sort((a,b)=>(b[1].totalEarned||0)-(a[1].totalEarned||0));
+    el.innerHTML = items.map(([id,p],i)=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="font-size:20px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+            <div style="flex:1">
+                <div style="font-weight:700;color:white">${p.username}</div>
+                <div style="font-size:12px;color:#FFCA28">${p.totalEarned}৳</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editLb('${id}','${p.username||''}',${p.totalEarned||0},'${p.profileImage||''}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delLb('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addLeaderboard = async function() {
+    const user=document.getElementById('lb-user').value.trim(), earned=parseInt(document.getElementById('lb-earned').value)||0, img=document.getElementById('lb-img').value.trim();
+    if (!user) { toast("Enter username","error"); return; }
+    await set(push(ref(rtdb,'leaderboard')),{username:user,totalEarned:earned,profileImage:img});
+    toast("Added!"); ['lb-user','lb-earned','lb-img'].forEach(id=>document.getElementById(id).value=''); loadLeaderboard();
+};
+window.editLb = function(id,user,earned,img) {
+    document.getElementById('edit-lb-id').value=id;
+    document.getElementById('edit-lb-user').value=user;
+    document.getElementById('edit-lb-earned').value=earned;
+    document.getElementById('edit-lb-img').value=img;
+    openModal('lb-modal');
+};
+window.saveLbEdit = async function() {
+    const id=document.getElementById('edit-lb-id').value;
+    await update(ref(rtdb,`leaderboard/${id}`),{
+        username:document.getElementById('edit-lb-user').value.trim(),
+        totalEarned:parseInt(document.getElementById('edit-lb-earned').value)||0,
+        profileImage:document.getElementById('edit-lb-img').value.trim()
+    });
+    toast("Saved!"); closeModal('lb-modal'); loadLeaderboard();
+};
+window.delLb = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`leaderboard/${id}`)); toast("Deleted"); loadLeaderboard();
+};
+
+// ─── RTDB: RULES ───
+async function loadRules() {
+    const snap = await get(ref(rtdb,'rules'));
+    const el = document.getElementById('rules-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No rules</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,r],i)=>`
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="min-width:24px;height:24px;background:rgba(255,202,40,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#FFCA28;margin-top:2px">${i+1}</div>
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:14px;line-height:1.5">${r.text||r.rule}</div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editRule('${id}','${(r.text||r.rule||'').replace(/'/g,"\\'").replace(/\n/g,' ')}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delRule('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addRule = async function() {
+    const text=document.getElementById('rule-text').value.trim();
+    if (!text) { toast("Enter rule text","error"); return; }
+    await set(push(ref(rtdb,'rules')),{text});
+    toast("Rule added!"); document.getElementById('rule-text').value=''; loadRules();
+};
+window.editRule = function(id,text) {
+    document.getElementById('edit-rule-id').value=id;
+    document.getElementById('edit-rule-text').value=text;
+    openModal('rule-modal');
+};
+window.saveRuleEdit = async function() {
+    const id=document.getElementById('edit-rule-id').value;
+    await update(ref(rtdb,`rules/${id}`),{text:document.getElementById('edit-rule-text').value.trim()});
+    toast("Saved!"); closeModal('rule-modal'); loadRules();
+};
+window.delRule = async function(id) {
+    if (!confirm("Delete rule?")) return;
+    await remove(ref(rtdb,`rules/${id}`)); toast("Deleted"); loadRules();
+};
+
+// ════════════════════════════════════════════
+// NEW ADMIN FUNCTIONS
+// ════════════════════════════════════════════
+
+// ─── MAINTENANCE MODE ───
+async function loadMaintenanceSettings() {
+    const snap = await getDoc(doc(db,"config","main"));
+    const d = snap.exists() ? snap.data() : {};
+    const toggle = document.getElementById('maintenance-toggle');
+    const msg = document.getElementById('maintenance-message');
+    const statusEl = document.getElementById('maintenance-status-display');
+    if (toggle) toggle.checked = !!d.maintenanceMode;
+    if (msg) msg.value = d.maintenanceMessage || '';
+    updateMaintenanceUI(!!d.maintenanceMode);
+}
+function updateMaintenanceUI(isOn) {
+    const knob = document.getElementById('maint-knob');
+    const track = document.getElementById('maintenance-slider-knob');
+    const statusEl = document.getElementById('maintenance-status-display');
+    if (knob) knob.style.transform = isOn ? 'translateX(28px)' : 'translateX(0)';
+    if (track) track.style.background = isOn ? '#ef4444' : '#374151';
+    if (statusEl) {
+        statusEl.style.background = isOn ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
+        statusEl.style.color = isOn ? '#f87171' : '#34d399';
+        statusEl.style.border = isOn ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(16,185,129,0.25)';
+        statusEl.textContent = isOn ? '🔴 Maintenance Mode is ON — Users see maintenance page' : '🟢 App is LIVE — Users can access normally';
+    }
+}
+window.toggleMaintenance = function() {
+    const isOn = document.getElementById('maintenance-toggle').checked;
+    updateMaintenanceUI(isOn);
+};
+window.saveMaintenance = async function() {
+    const isOn = document.getElementById('maintenance-toggle').checked;
+    const msg = document.getElementById('maintenance-message').value.trim();
+    await setDoc(doc(db,"config","main"),{ maintenanceMode: isOn, maintenanceMessage: msg }, {merge:true});
+    toast(isOn ? "⚠️ Maintenance mode ON!" : "✅ App is live!", isOn ? "error" : "success");
+};
+
+// ─── TASK RULES ───
+async function loadTaskRules() {
+    const snap = await get(ref(rtdb,'taskRules'));
+    const el = document.getElementById('task-rules-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No task rules yet.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,r],i) => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="min-width:24px;height:24px;background:rgba(255,202,40,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#FFCA28;margin-top:2px">${i+1}</div>
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:14px">${r.text||r}</div>
+            <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delTaskRule('${id}')">Del</button>
+        </div>`).join('');
+}
+window.addTaskRule = async function() {
+    const text = document.getElementById('task-rule-text').value.trim();
+    if (!text) { toast("Enter rule text","error"); return; }
+    await set(push(ref(rtdb,'taskRules')),{text});
+    toast("Task rule added!"); document.getElementById('task-rule-text').value=''; loadTaskRules();
+    // Also update Firestore config for user panel
+    const snap = await getDoc(doc(db,"config","main"));
+    const existing = snap.exists() ? (snap.data().taskRules || []) : [];
+    existing.push(text);
+    await setDoc(doc(db,"config","main"),{taskRules: existing},{merge:true});
+};
+window.delTaskRule = async function(id) {
+    if (!confirm("Delete task rule?")) return;
+    const snap = await get(ref(rtdb,'taskRules'));
+    await remove(ref(rtdb,`taskRules/${id}`));
+    // Reload config
+    const allRules = await get(ref(rtdb,'taskRules'));
+    const arr = allRules.val() ? Object.values(allRules.val()).map(r=>r.text||r) : [];
+    await setDoc(doc(db,"config","main"),{taskRules:arr},{merge:true});
+    toast("Deleted"); loadTaskRules();
+};
+
+// ─── WITHDRAWAL RULES ───
+async function loadWithdrawalRulesAdmin() {
+    const snap = await get(ref(rtdb,'withdrawalRules'));
+    const el = document.getElementById('withdrawal-rules-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No withdrawal rules yet.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,r],i) => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="min-width:24px;height:24px;background:rgba(59,130,246,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#60a5fa;margin-top:2px">${i+1}</div>
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:14px">${r.text||r}</div>
+            <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delWithdrawalRule('${id}')">Del</button>
+        </div>`).join('');
+}
+window.addWithdrawalRule = async function() {
+    const text = document.getElementById('withdrawal-rule-text').value.trim();
+    if (!text) { toast("Enter rule text","error"); return; }
+    await set(push(ref(rtdb,'withdrawalRules')),{text});
+    toast("Withdrawal rule added!"); document.getElementById('withdrawal-rule-text').value=''; loadWithdrawalRulesAdmin();
+};
+window.delWithdrawalRule = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`withdrawalRules/${id}`)); toast("Deleted"); loadWithdrawalRulesAdmin();
+};
+
+// ─── REFERRAL RULES ───
+async function loadReferralRulesAdmin() {
+    const snap = await get(ref(rtdb,'referralRules'));
+    const el = document.getElementById('referral-rules-list-admin');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No referral rules yet.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,r],i) => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="min-width:24px;height:24px;background:rgba(16,185,129,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#34d399;margin-top:2px">${i+1}</div>
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:14px">${r.text||r}</div>
+            <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delReferralRule('${id}')">Del</button>
+        </div>`).join('');
+}
+window.addReferralRule = async function() {
+    const text = document.getElementById('referral-rule-text').value.trim();
+    if (!text) { toast("Enter rule text","error"); return; }
+    await set(push(ref(rtdb,'referralRules')),{text});
+    toast("Referral rule added!"); document.getElementById('referral-rule-text').value=''; loadReferralRulesAdmin();
+};
+window.delReferralRule = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`referralRules/${id}`)); toast("Deleted"); loadReferralRulesAdmin();
+};
+
+// ─── AUTH SLIDER (Login Page) ───
+async function loadAuthSliders() {
+    const snap = await get(ref(rtdb,'authSliders'));
+    const el = document.getElementById('auth-sliders-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No login sliders</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,s])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="width:80px;height:48px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05)">
+                ${s.imageUrl?`<img src="${s.imageUrl}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+            <div style="flex:1;color:white;font-weight:600">${s.title||'Slide'}</div>
+            <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delAuthSlider('${id}')">Del</button>
+        </div>`).join('');
+}
+window.addAuthSlider = async function() {
+    const img = document.getElementById('auth-slider-img').value.trim();
+    const title = document.getElementById('auth-slider-title').value.trim();
+    if (!img) { toast("Enter image URL","error"); return; }
+    await set(push(ref(rtdb,'authSliders')),{imageUrl:img,title});
+    toast("Login slider added!"); document.getElementById('auth-slider-img').value=''; document.getElementById('auth-slider-title').value=''; loadAuthSliders();
+};
+window.delAuthSlider = async function(id) {
+    if (!confirm("Delete slider?")) return;
+    await remove(ref(rtdb,`authSliders/${id}`)); toast("Deleted"); loadAuthSliders();
+};
+
+// ─── TELEGRAM LINKS ───
+async function loadTelegramLinks() {
+    const snap = await getDoc(doc(db,"config","main"));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('tg-support-link').value = d.telegramSupportLink || '';
+    document.getElementById('tg-group-link').value = d.telegramGroupLink || '';
+}
+window.saveTelegramLinks = async function() {
+    const supportLink = document.getElementById('tg-support-link').value.trim();
+    const groupLink = document.getElementById('tg-group-link').value.trim();
+    await setDoc(doc(db,"config","main"),{ telegramSupportLink: supportLink, telegramGroupLink: groupLink },{merge:true});
+    toast("Telegram links saved!");
+};
+
+// ─── MONETAG AD ID ───
+async function loadMonetag() {
+    const snap = await getDoc(doc(db,"config","main"));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('monetag-ad-id').value = d.monetagAdId || '';
+}
+window.saveMonetag = async function() {
+    const id = document.getElementById('monetag-ad-id').value.trim();
+    await setDoc(doc(db,"config","main"),{ monetagAdId: id },{merge:true});
+    toast("Monetag Ad ID saved!");
+};
+
+// ─── REGISTRATION BONUS ───
+async function loadRegBonus() {
+    const snap = await getDoc(doc(db,"config","main"));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('reg-bonus-amount').value = d.registrationBonus || 50;
+    const statusEl = document.getElementById('reg-bonus-status');
+    if (statusEl) statusEl.textContent = `Current: ${d.registrationBonus || 50}৳ given to new users on signup`;
+}
+window.saveRegBonus = async function() {
+    const amount = parseInt(document.getElementById('reg-bonus-amount').value) || 50;
+    await setDoc(doc(db,"config","main"),{ registrationBonus: amount },{merge:true});
+    toast(`Registration bonus set to ${amount}৳!`);
+    document.getElementById('reg-bonus-status').textContent = `Current: ${amount}৳ given to new users on signup`;
+};
+
+
+// ══════════════════════════════════════════
+// ─── INVESTMENT PLANS ───
+// ══════════════════════════════════════════
+async function loadPlans() {
+    const snap = await get(ref(rtdb,'investmentPlans'));
+    const el = document.getElementById('plans-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No plans yet. Add a plan above.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,p])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;background:rgba(255,255,255,0.03);border-radius:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.06)">
+            <div style="width:56px;height:56px;border-radius:12px;overflow:hidden;background:rgba(255,202,40,0.1);flex-shrink:0">
+                ${Object.values(p.images||{})[0]?`<img src="${Object.values(p.images||{})[0]}" style="width:100%;height:100%;object-fit:cover">`:
+                '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px">📈</div>'}
+            </div>
+            <div style="flex:1">
+                <div style="font-weight:700;color:white;font-size:15px">${p.name}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px">
+                    💰 ${p.price}৳ &nbsp;|&nbsp; 📋 ${p.dailyTaskLimit} tasks/day &nbsp;|&nbsp; 💵 ${p.dailyEarnings}৳/day &nbsp;|&nbsp; 📅 ${p.duration} days
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+                <button class="btn btn-gold" style="font-size:12px;padding:7px 14px;white-space:nowrap" onclick="window.openPlanTaskManager('${id}','${(p.name||'').replace(/'/g,"\\'")}')">📋 Manage Tasks</button>
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-blue" style="font-size:11px;padding:5px 10px;flex:1" onclick="window.editPlan('${id}')">Edit</button>
+                    <button class="btn btn-red" style="font-size:11px;padding:5px 10px;flex:1" onclick="window.delPlan('${id}')">Del</button>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+// ── Open Task Manager for a Plan ──
+window.openPlanTaskManager = async function(planId, planName) {
+    const mgr = document.getElementById('plan-task-manager');
+    mgr.style.display = 'block';
+    document.getElementById('pt-plan-id').value = planId;
+    document.getElementById('plan-task-manager-title').textContent = `📋 Tasks — ${planName}`;
+    document.getElementById('plan-task-manager-sub').textContent = `RTDB: tasks/${planId}/`;
+    mgr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loadPlanTasks(planId);
+};
+
+async function loadPlanTasks(planId) {
+    const snap = await get(ref(rtdb, `tasks/${planId}`));
+    const el = document.getElementById('plan-tasks-list');
+    if (!snap.val()) {
+        el.innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:24px">এই plan এ কোনো task নেই। উপরে Add Task করুন।</div>';
+        return;
+    }
+    el.innerHTML = Object.entries(snap.val()).map(([id, t]) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05)">
+            <div style="font-size:26px;width:36px;text-align:center">${t.emoji || '📋'}</div>
+            <div style="flex:1">
+                <div style="font-weight:700;color:white;font-size:14px">${t.name}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px">
+                    Reward: <span style="color:#FFCA28;font-weight:700">${t.reward}৳</span> &nbsp;|&nbsp; Timer: <span style="color:#60a5fa">${t.timerSeconds}s</span>
+                    ${t.adLink ? ` &nbsp;|&nbsp; <span style="color:rgba(255,255,255,0.3);font-size:11px">Link set ✓</span>` : ''}
+                </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editPlanTask('${id}','${document.getElementById('pt-plan-id').value}','${(t.name||'').replace(/'/g,"\\'")}','${(t.adLink||'').replace(/'/g,"\\'")}',${t.reward},${t.timerSeconds},'${t.emoji||''}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delPlanTask('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+
+window.addPlanTask = async function() {
+    const planId = document.getElementById('pt-plan-id').value;
+    if (!planId) { toast("Plan select করুন", "error"); return; }
+    const name = document.getElementById('pt-name').value.trim();
+    const url = document.getElementById('pt-url').value.trim();
+    const reward = parseFloat(document.getElementById('pt-reward').value) || 1;
+    const timer = Math.max(15, parseInt(document.getElementById('pt-timer').value) || 15);
+    const emoji = document.getElementById('pt-emoji').value.trim() || '📋';
+    if (!name) { toast("Task name দিন", "error"); return; }
+    await set(push(ref(rtdb, `tasks/${planId}`)), { name, adLink: url, reward, timerSeconds: timer, emoji, createdAt: Date.now() });
+    toast("Task added! ✓");
+    ['pt-name','pt-url','pt-reward','pt-timer','pt-emoji'].forEach(id => document.getElementById(id).value = '');
+    loadPlanTasks(planId);
+};
+
+window.editPlanTask = function(id, planId, name, url, reward, timer, emoji) {
+    document.getElementById('edit-pt-id').value = id;
+    document.getElementById('edit-pt-plan-id').value = planId;
+    document.getElementById('edit-pt-name').value = name;
+    document.getElementById('edit-pt-url').value = url;
+    document.getElementById('edit-pt-reward').value = reward;
+    document.getElementById('edit-pt-timer').value = timer;
+    document.getElementById('edit-pt-emoji').value = emoji;
+    openModal('plan-task-modal');
+};
+
+window.savePlanTaskEdit = async function() {
+    const id = document.getElementById('edit-pt-id').value;
+    const planId = document.getElementById('edit-pt-plan-id').value;
+    const timer = Math.max(15, parseInt(document.getElementById('edit-pt-timer').value) || 15);
+    await update(ref(rtdb, `tasks/${planId}/${id}`), {
+        name: document.getElementById('edit-pt-name').value.trim(),
+        adLink: document.getElementById('edit-pt-url').value.trim(),
+        reward: parseFloat(document.getElementById('edit-pt-reward').value) || 1,
+        timerSeconds: timer,
+        emoji: document.getElementById('edit-pt-emoji').value.trim() || '📋'
+    });
+    toast("Task updated! ✓"); closeModal('plan-task-modal'); loadPlanTasks(planId);
+};
+
+window.delPlanTask = async function(id) {
+    const planId = document.getElementById('pt-plan-id').value;
+    if (!confirm("Delete this task?")) return;
+    await remove(ref(rtdb, `tasks/${planId}/${id}`));
+    toast("Deleted"); loadPlanTasks(planId);
+};
+
+window.addPlan = async function() {
+    const name = document.getElementById('plan-name').value.trim();
+    const price = parseFloat(document.getElementById('plan-price').value)||0;
+    const dailyLimit = parseInt(document.getElementById('plan-daily-limit').value)||10;
+    const dailyEarn = parseFloat(document.getElementById('plan-daily-earn').value)||0;
+    const duration = parseInt(document.getElementById('plan-duration').value)||30;
+    const imgsRaw = document.getElementById('plan-images').value.trim();
+    const desc = document.getElementById('plan-desc').value.trim();
+    if (!name || !price) { toast("Name & Price required","error"); return; }
+    const images = {};
+    imgsRaw.split(',').map(s=>s.trim()).filter(Boolean).forEach((url,i)=>{ images[`img${i+1}`]=url; });
+    const newRef = push(ref(rtdb,'investmentPlans'));
+    await set(newRef,{name,price,dailyTaskLimit:dailyLimit,dailyEarnings:dailyEarn,duration,images,description:desc,createdAt:Date.now()});
+    toast("Plan added!"); ['plan-name','plan-price','plan-daily-limit','plan-daily-earn','plan-duration','plan-images','plan-desc'].forEach(id=>document.getElementById(id).value=''); loadPlans();
+};
+
+window.editPlan = async function(id) {
+    const snap = await get(ref(rtdb,`investmentPlans/${id}`));
+    if (!snap.val()) return;
+    const p = snap.val();
+    document.getElementById('edit-plan-id').value = id;
+    document.getElementById('edit-plan-name').value = p.name||'';
+    document.getElementById('edit-plan-price').value = p.price||'';
+    document.getElementById('edit-plan-daily-limit').value = p.dailyTaskLimit||'';
+    document.getElementById('edit-plan-daily-earn').value = p.dailyEarnings||'';
+    document.getElementById('edit-plan-duration').value = p.duration||'';
+    document.getElementById('edit-plan-images').value = Object.values(p.images||{}).join(', ');
+    document.getElementById('edit-plan-desc').value = p.description||'';
+    openModal('plan-modal');
+};
+
+window.savePlanEdit = async function() {
+    const id = document.getElementById('edit-plan-id').value;
+    const imgsRaw = document.getElementById('edit-plan-images').value.trim();
+    const images = {};
+    imgsRaw.split(',').map(s=>s.trim()).filter(Boolean).forEach((url,i)=>{ images[`img${i+1}`]=url; });
+    await update(ref(rtdb,`investmentPlans/${id}`),{
+        name:document.getElementById('edit-plan-name').value.trim(),
+        price:parseFloat(document.getElementById('edit-plan-price').value)||0,
+        dailyTaskLimit:parseInt(document.getElementById('edit-plan-daily-limit').value)||10,
+        dailyEarnings:parseFloat(document.getElementById('edit-plan-daily-earn').value)||0,
+        duration:parseInt(document.getElementById('edit-plan-duration').value)||30,
+        images, description:document.getElementById('edit-plan-desc').value.trim()
+    });
+    toast("Plan saved!"); closeModal('plan-modal'); loadPlans();
+};
+
+window.delPlan = async function(id) {
+    if (!confirm("Delete this plan?")) return;
+    await remove(ref(rtdb,`investmentPlans/${id}`)); toast("Deleted"); loadPlans();
+};
+
+// ══════════════════════════════════════════
+// ─── DEPOSIT METHODS ───
+// ══════════════════════════════════════════
+async function loadDepositMethods() {
+    const snap = await get(ref(rtdb,'depositMethods'));
+    const walSnap = await get(ref(rtdb,'depositWallets'));
+    const el = document.getElementById('deposit-methods-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No methods yet.</div>'; return; }
+    const wallets = walSnap.val() || {};
+    el.innerHTML = Object.entries(snap.val()).map(([key,m])=>{
+        const wallet = wallets[key] || '';
+        const typeBadge = m.type==='crypto'?'<span class="badge badge-blue">Crypto</span>':'<span class="badge badge-green">BD</span>';
+        return `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="width:44px;height:44px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.06);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                ${m.icon?`<img src="${m.icon}" style="width:100%;height:100%;object-fit:cover">`:m.name?.charAt(0)||'💳'}
+            </div>
+            <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-weight:700;color:white">${m.name}</span>${typeBadge}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.4)">Key: ${key} &nbsp;|&nbsp; Wallet: ${wallet||'Not set'}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editDm('${key}','${(m.name||'').replace(/'/g,"\\'")}','${m.icon||''}','${(wallet||'').replace(/'/g,"\\'")}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delDm('${key}')">Del</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.addDepositMethod = async function(type) {
+    let key,name,icon,wallet;
+    if (type==='bd') {
+        key=document.getElementById('dm-key').value.trim().toLowerCase().replace(/\s/g,'');
+        name=document.getElementById('dm-name').value.trim();
+        icon=document.getElementById('dm-icon').value.trim();
+        wallet=document.getElementById('dm-phone').value.trim();
+    } else {
+        key=document.getElementById('dm-crypto-key').value.trim().toLowerCase().replace(/\s/g,'');
+        name=document.getElementById('dm-crypto-name').value.trim();
+        icon=document.getElementById('dm-crypto-icon').value.trim();
+        wallet=document.getElementById('dm-crypto-addr').value.trim();
+    }
+    if (!key||!name) { toast("Key & Name required","error"); return; }
+    await set(ref(rtdb,`depositMethods/${key}`),{name,icon,type});
+    await set(ref(rtdb,`depositWallets/${key}`),wallet);
+    toast(`${name} added!`);
+    if(type==='bd') ['dm-key','dm-name','dm-icon','dm-phone'].forEach(id=>document.getElementById(id).value='');
+    else ['dm-crypto-key','dm-crypto-name','dm-crypto-icon','dm-crypto-addr'].forEach(id=>document.getElementById(id).value='');
+    loadDepositMethods();
+};
+
+window.editDm = function(key,name,icon,wallet) {
+    document.getElementById('edit-dm-key').value=key;
+    document.getElementById('edit-dm-name').value=name;
+    document.getElementById('edit-dm-icon').value=icon;
+    document.getElementById('edit-dm-wallet').value=wallet;
+    openModal('dm-modal');
+};
+
+window.saveDmEdit = async function() {
+    const key=document.getElementById('edit-dm-key').value;
+    await update(ref(rtdb,`depositMethods/${key}`),{
+        name:document.getElementById('edit-dm-name').value.trim(),
+        icon:document.getElementById('edit-dm-icon').value.trim()
+    });
+    await set(ref(rtdb,`depositWallets/${key}`),document.getElementById('edit-dm-wallet').value.trim());
+    toast("Method saved!"); closeModal('dm-modal'); loadDepositMethods();
+};
+
+window.delDm = async function(key) {
+    if (!confirm(`Delete method "${key}"?`)) return;
+    await remove(ref(rtdb,`depositMethods/${key}`));
+    await remove(ref(rtdb,`depositWallets/${key}`));
+    toast("Deleted"); loadDepositMethods();
+};
+
+// ══════════════════════════════════════════
+// ─── DEPOSIT SETTINGS ───
+// ══════════════════════════════════════════
+async function loadDepositRules() {
+    const snap = await get(ref(rtdb,'depositRules'));
+    const el = document.getElementById('deposit-rules-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:16px">No rules yet.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,r],i)=>`
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:6px">
+            <div style="min-width:22px;height:22px;background:rgba(255,202,40,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#FFCA28;margin-top:1px">${i+1}</div>
+            <div style="flex:1;color:rgba(255,255,255,0.8);font-size:13px">${r.text||r}</div>
+            <button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="window.delDepositRule('${id}')">Del</button>
+        </div>`).join('');
+}
+window.addDepositRule = async function() {
+    const text=document.getElementById('dep-rule-text').value.trim();
+    if (!text) { toast("Enter rule","error"); return; }
+    await set(push(ref(rtdb,'depositRules')),{text});
+    toast("Rule added!"); document.getElementById('dep-rule-text').value=''; loadDepositRules();
+};
+window.delDepositRule = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`depositRules/${id}`)); toast("Deleted"); loadDepositRules();
+};
+
+async function loadDepositPendingNotice() {
+    const snap = await get(ref(rtdb,'depositPendingNotice'));
+    const d = snap.val()||{};
+    document.getElementById('dep-notice-title').value = d.title||'';
+    document.getElementById('dep-notice-msg').value = d.message||'';
+    document.getElementById('dep-notice-status').textContent = d.title ? `✅ Notice set: "${d.title}"` : '❌ Not configured';
+}
+window.saveDepositPendingNotice = async function() {
+    const title=document.getElementById('dep-notice-title').value.trim();
+    const message=document.getElementById('dep-notice-msg').value.trim();
+    if (!title) { toast("Enter title","error"); return; }
+    await set(ref(rtdb,'depositPendingNotice'),{title,message});
+    toast("Notice saved!"); loadDepositPendingNotice();
+};
+
+async function loadDepositCommission() {
+    const snap = await get(ref(rtdb,'depositCommission'));
+    const d = snap.val()||{};
+    document.getElementById('dep-comm-title').value = d.title||'';
+    document.getElementById('dep-comm-pct').value = d.percent||'';
+    document.getElementById('dep-comm-desc').value = d.description||'';
+}
+window.saveDepositCommission = async function() {
+    const title=document.getElementById('dep-comm-title').value.trim();
+    const percent=parseFloat(document.getElementById('dep-comm-pct').value)||0;
+    const description=document.getElementById('dep-comm-desc').value.trim();
+    await set(ref(rtdb,'depositCommission'),{title,percent,description});
+    toast("Commission saved!");
+};
+
+// Helper: parse Firebase RTDB value (array stored as object {0:v,1:v} or plain array)
+function parseRtdbArray(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.filter(n => n != null).map(Number);
+    if (typeof val === 'object') return Object.values(val).filter(n => n != null).map(Number);
+    return [];
+}
+
+async function loadDepositAmounts() {
+    const [snapBD, snapCrypto, snapMin] = await Promise.all([
+        get(ref(rtdb,'depositAmounts/bd')),
+        get(ref(rtdb,'depositAmounts/crypto')),
+        get(ref(rtdb,'depositMinAmount'))
+    ]);
+    const bdArr = parseRtdbArray(snapBD.val());
+    const cryptoArr = parseRtdbArray(snapCrypto.val());
+    document.getElementById('dep-amounts-bd').value = bdArr.join(', ');
+    document.getElementById('dep-amounts-crypto').value = cryptoArr.join(', ');
+    renderChipsPreview('bd-chips-preview', bdArr, '৳');
+    renderChipsPreview('crypto-chips-preview', cryptoArr, '$');
+    const minData = snapMin.val() || {};
+    const bdMin = document.getElementById('min-deposit-bd');
+    const cryptoMin = document.getElementById('min-deposit-crypto');
+    if (bdMin) bdMin.value = minData.bd || '';
+    if (cryptoMin) cryptoMin.value = minData.crypto || '';
+    // Show current min info
+    updateMinDepositInfo('bd', minData.bd || 0);
+    updateMinDepositInfo('crypto', minData.crypto || 0);
+}
+
+function updateMinDepositInfo(type, val) {
+    const sym = type === 'crypto' ? '$' : '৳';
+    const elId = `min-deposit-${type}-info`;
+    let el = document.getElementById(elId);
+    if (!el) {
+        const parent = document.getElementById(`min-deposit-${type}`)?.parentNode;
+        if (parent) {
+            el = document.createElement('div');
+            el.id = elId;
+            el.style.cssText = 'font-size:11px;color:rgba(255,202,40,0.7);margin-top:4px';
+            parent.appendChild(el);
+        }
+    }
+    if (el) el.textContent = val > 0 ? `Current: ${sym}${val}` : 'Not set';
+}
+
+function renderChipsPreview(containerId, amounts, sym) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!amounts.length) {
+        el.innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.3)">No chips set</span>';
+        return;
+    }
+    el.innerHTML = amounts.map(a =>
+        `<span style="background:rgba(255,202,40,0.12);border:1px solid rgba(255,202,40,0.3);color:#FFCA28;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:700">${sym}${a}</span>`
+    ).join('');
+}
+
+window.saveDepositAmounts = async function(type) {
+    const key = type || 'bd';
+    const raw = document.getElementById(`dep-amounts-${key}`).value.trim();
+    if (!raw) { toast("Enter at least one amount", "error"); return; }
+    const arr = raw.split(/[,، ]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0);
+    if (!arr.length) { toast("No valid numbers found", "error"); return; }
+    // Save as plain object {0:v,1:v} — Firebase RTDB compatible
+    const obj = {};
+    arr.forEach((v, i) => obj[i] = v);
+    await set(ref(rtdb, `depositAmounts/${key}`), obj);
+    const sym = key === 'crypto' ? '$' : '৳';
+    renderChipsPreview(`${key}-chips-preview`, arr, sym);
+    document.getElementById(`dep-amounts-${key}`).value = arr.join(', ');
+    toast(`✅ ${key === 'bd' ? 'BD' : 'Crypto'} deposit amounts saved! (${arr.length} chips)`);
+};
+
+window.saveMinDeposit = async function() {
+    const bd = parseFloat(document.getElementById('min-deposit-bd').value) || 0;
+    const crypto = parseFloat(document.getElementById('min-deposit-crypto').value) || 0;
+    await set(ref(rtdb, 'depositMinAmount'), { bd, crypto });
+    updateMinDepositInfo('bd', bd);
+    updateMinDepositInfo('crypto', crypto);
+    toast("✅ Minimum deposit saved!");
+};
+
+// ══════════════════════════════════════════
+// ─── PASSWORD RESET REQUESTS ───
+// ══════════════════════════════════════════
+async function loadPasswordResets() {
+    const body = document.getElementById('pwd-resets-body');
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px">Loading...</td></tr>';
+    const q = query(collection(db, "passwordResets"), orderBy("requestedAt", "desc"));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px">No password reset requests</td></tr>';
+        return;
+    }
+    body.innerHTML = '';
+    snap.forEach(d => {
+        const r = d.data();
+        const date = r.requestedAt?.toDate().toLocaleDateString() || 'N/A';
+        const statusColor = r.status === 'completed' ? '#4ade80' : r.status === 'rejected' ? '#f87171' : '#FFCA28';
+        body.innerHTML += `<tr>
+            <td style="font-weight:600;color:white">${r.username || 'N/A'}</td>
+            <td style="font-family:monospace;font-size:12px;color:rgba(255,255,255,0.5)">${r.uid || '—'}</td>
+            <td style="color:#60a5fa">${r.email || 'N/A'}</td>
+            <td style="font-size:12px;color:rgba(255,255,255,0.6);max-width:180px;white-space:normal">${r.message || '—'}</td>
+            <td style="font-size:12px;color:rgba(255,255,255,0.4)">${date}</td>
+            <td><span style="color:${r.status === 'email_sent' ? '#4ade80' : r.status === 'rejected' ? '#f87171' : '#FFCA28'};font-weight:700;font-size:12px">${r.status === 'email_sent' ? '✅ Email Sent' : r.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}</span></td>
+            <td>
+                ${r.status === 'pending' ? `
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-gold" style="font-size:11px;padding:5px 10px" onclick="window.openPwdReset('${d.id}','${r.email}')">📧 Send Email</button>
+                    <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="window.rejectPwdReset('${d.id}')">Reject</button>
+                </div>` : `<span style="font-size:12px;color:rgba(255,255,255,0.3)">${r.status === 'email_sent' ? 'Done' : 'Rejected'}</span>`}
+            </td>
+        </tr>`;
+    });
+}
+
+window.openPwdReset = function(docId, email) {
+    document.getElementById('pwd-reset-doc-id').value = docId;
+    document.getElementById('pwd-reset-user-email').value = email;
+    document.getElementById('pwd-reset-email-display').textContent = email;
+    openModal('pwd-reset-modal');
+};
+
+window.confirmResetPassword = async function() {
+    const docId = document.getElementById('pwd-reset-doc-id').value;
+    const email = document.getElementById('pwd-reset-user-email').value;
+    if (!email) { toast("Email not found", "error"); return; }
+    try {
+        // Firebase official method — sends reset email directly to user
+        await sendPasswordResetEmail(auth, email);
+        // Mark request as completed in Firestore
+        await updateDoc(doc(db, "passwordResets", docId), {
+            status: 'email_sent',
+            resolvedAt: serverTimestamp(),
+            note: 'Firebase password reset email sent to user'
+        });
+        // Send in-app notification to user
+        const usersSnap = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+        usersSnap.forEach(async ud => {
+            await addDoc(collection(db, "users", ud.id, "notifications"), {
+                title: "🔑 Password Reset Email Sent",
+                message: `A password reset link has been sent to ${email}. Please check your inbox and follow the link to set a new password.`,
+                createdAt: serverTimestamp(), type: 'personal'
+            });
+        });
+        toast(`✅ Password reset email sent to ${email}!`);
+        closeModal('pwd-reset-modal');
+        loadPasswordResets();
+    } catch(e) {
+        if (e.code === 'auth/user-not-found') {
+            toast("No Firebase account found with this email", "error");
+        } else {
+            toast("Error: " + e.message, "error");
+        }
+    }
+};
+
+window.rejectPwdReset = async function(docId) {
+    if (!confirm("Reject this password reset request?")) return;
+    await updateDoc(doc(db, "passwordResets", docId), { status: 'rejected', resolvedAt: serverTimestamp() });
+    toast("Request rejected.");
+    loadPasswordResets();
+};
+
+// ══════════════════════════════════════════
+// ─── DEPOSITS MANAGEMENT ───
+// ══════════════════════════════════════════
+function loadPendingDeposits() {
+    const body = document.getElementById('deposits-pending-body');
+    onSnapshot(query(collection(db,"deposits"),where("status","==","pending")), snap => {
+        if (snap.empty) { body.innerHTML='<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px">No pending deposits</td></tr>'; return; }
+        body.innerHTML='';
+        snap.forEach(d=>{
+            const data=d.data(), date=data.createdAt?.toDate().toLocaleDateString()||'N/A';
+            body.innerHTML+=`<tr>
+                <td style="font-weight:600">${data.userName||'N/A'}</td>
+                <td style="font-weight:700;color:#FFCA28">${data.amount}${data.currency==='USD'?'$':'৳'}</td>
+                <td>${data.methodName||data.method}</td>
+                <td style="font-family:monospace;font-size:12px;color:rgba(255,255,255,0.6)">${data.trxId||'N/A'}</td>
+                <td>${date}</td>
+                <td style="display:flex;gap:6px">
+                    <button class="btn btn-green" onclick="window.approveDeposit('${d.id}','${data.userId||''}',${data.amount||0})">✓ Approve</button>
+                    <button class="btn btn-red" onclick="window.rejectDeposit('${d.id}')">✗ Reject</button>
+                </td></tr>`;
+        });
+    });
+}
+function loadDepositHistory() {
+    const body = document.getElementById('deposits-history-body');
+    onSnapshot(query(collection(db,"deposits"),where("status","in",["approved","rejected"])), snap => {
+        if (snap.empty) { body.innerHTML='<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.3);padding:24px">No history</td></tr>'; return; }
+        const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+        docs.sort((a,b)=>(b.createdAt?.toDate()||0)-(a.createdAt?.toDate()||0));
+        body.innerHTML=docs.map(d=>{
+            const cls=d.status==='approved'?'badge-green':'badge-red';
+            return `<tr>
+                <td>${d.userName||'N/A'}</td>
+                <td style="font-weight:700">${d.amount}${d.currency==='USD'?'$':'৳'}</td>
+                <td>${d.methodName||d.method}</td>
+                <td style="font-family:monospace;font-size:12px;color:rgba(255,255,255,0.6)">${d.trxId||'N/A'}</td>
+                <td><span class="badge ${cls}">${d.status}</span></td>
+                <td>${d.createdAt?.toDate().toLocaleDateString()||'N/A'}</td>
+                <td><button class="btn btn-red" style="font-size:12px;padding:6px 10px" onclick="window.delDeposit('${d.id}')">Del</button></td></tr>`;
+        }).join('');
+    });
+}
+window.approveDeposit = async function(id, userId, amount) {
+    if (!confirm(`Approve deposit of ${amount}?`)) return;
+    await updateDoc(doc(db,"deposits",id),{status:"approved"});
+    // Credit user balance
+    if (userId) {
+        const uSnap = await getDoc(doc(db,"users",userId));
+        if (uSnap.exists()) {
+            const cur = uSnap.data().balance||0;
+            const totalDep = (uSnap.data().totalDeposit||0)+amount;
+            await updateDoc(doc(db,"users",userId),{balance:cur+amount, totalDeposit:totalDep});
+        }
+    }
+    toast("Deposit approved & balance credited ✓");
+};
+window.rejectDeposit = async function(id) {
+    if (!confirm("Reject this deposit?")) return;
+    await updateDoc(doc(db,"deposits",id),{status:"rejected"});
+    toast("Deposit rejected");
+};
+window.delDeposit = async function(id) {
+    if (!confirm("Delete record?")) return;
+    await deleteDoc(doc(db,"deposits",id)); toast("Deleted");
+};
+
+// ══════════════════════════════════════════
+// ─── REFERRAL TASKS ───
+// ══════════════════════════════════════════
+async function loadReferralTasks() {
+    const snap = await get(ref(rtdb,'referralTasks'));
+    const el = document.getElementById('referral-tasks-list');
+    if (!snap.val()) { el.innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No referral tasks yet.</div>'; return; }
+    el.innerHTML = Object.entries(snap.val()).map(([id,t])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:8px">
+            <div style="flex:1">
+                <div style="font-weight:700;color:white">${t.title}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px">
+                    Target: <strong style="color:#FFCA28">${t.target}</strong> referrals &nbsp;|&nbsp; Reward: <strong style="color:#34d399">${t.reward}৳</strong>
+                    ${t.description?` &nbsp;|&nbsp; ${t.description}`:''}
+                </div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-blue" style="font-size:12px;padding:6px 12px" onclick="window.editReftask('${id}','${(t.title||'').replace(/'/g,"\\'")}',${t.target||0},${t.reward||0},'${(t.description||'').replace(/'/g,"\\'")}')">Edit</button>
+                <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="window.delReftask('${id}')">Del</button>
+            </div>
+        </div>`).join('');
+}
+window.addReferralTask = async function() {
+    const title=document.getElementById('reftask-title').value.trim();
+    const target=parseInt(document.getElementById('reftask-target').value)||0;
+    const reward=parseFloat(document.getElementById('reftask-reward').value)||0;
+    const desc=document.getElementById('reftask-desc').value.trim();
+    if (!title||!target||!reward) { toast("Fill all fields","error"); return; }
+    await set(push(ref(rtdb,'referralTasks')),{title,target,reward,description:desc});
+    toast("Referral task added!"); ['reftask-title','reftask-target','reftask-reward','reftask-desc'].forEach(id=>document.getElementById(id).value=''); loadReferralTasks();
+};
+window.editReftask = function(id,title,target,reward,desc) {
+    document.getElementById('edit-reftask-id').value=id;
+    document.getElementById('edit-reftask-title').value=title;
+    document.getElementById('edit-reftask-target').value=target;
+    document.getElementById('edit-reftask-reward').value=reward;
+    document.getElementById('edit-reftask-desc').value=desc;
+    openModal('reftask-modal');
+};
+window.saveReftaskEdit = async function() {
+    const id=document.getElementById('edit-reftask-id').value;
+    await update(ref(rtdb,`referralTasks/${id}`),{
+        title:document.getElementById('edit-reftask-title').value.trim(),
+        target:parseInt(document.getElementById('edit-reftask-target').value)||0,
+        reward:parseFloat(document.getElementById('edit-reftask-reward').value)||0,
+        description:document.getElementById('edit-reftask-desc').value.trim()
+    });
+    toast("Saved!"); closeModal('reftask-modal'); loadReferralTasks();
+};
+window.delReftask = async function(id) {
+    if (!confirm("Delete?")) return;
+    await remove(ref(rtdb,`referralTasks/${id}`)); toast("Deleted"); loadReferralTasks();
+};
+
+// ══════════════════════════════════════════
+// ─── ABOUT US ───
+// ══════════════════════════════════════════
+async function loadAboutUsAdmin() {
+    const snap = await get(ref(rtdb,'aboutUs'));
+    const d = snap.val()||{};
+    if (typeof d === 'string') {
+        document.getElementById('about-title').value = 'About Earnplus';
+        document.getElementById('about-content').value = d;
+    } else {
+        document.getElementById('about-title').value = d.title||'';
+        document.getElementById('about-content').value = d.content||'';
+    }
+    document.getElementById('about-status').textContent = snap.val() ? '✅ Content set' : '❌ Not configured';
+}
+window.saveAboutUs = async function() {
+    const title=document.getElementById('about-title').value.trim();
+    const content=document.getElementById('about-content').value.trim();
+    if (!content) { toast("Enter content","error"); return; }
+    await set(ref(rtdb,'aboutUs'),{title,content});
+    toast("About Us saved!"); document.getElementById('about-status').textContent = '✅ Content saved';
+};
+
+// ══════════════════════════════════════════
+// ─── APP CONFIG (Download URL + Currency) ───
+// ══════════════════════════════════════════
+async function loadAppConfig() {
+    const snap = await getDoc(doc(db,"config","main"));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('app-download-url').value = d.appDownloadUrl||'';
+    const currency = d.currencySystem||'BDT';
+    document.getElementById(currency==='USD'?'currency-usd':'currency-bdt').checked = true;
+    document.getElementById('app-config-status').textContent = `Current: ${currency} currency${d.appDownloadUrl?', App URL set':''}`;
+}
+window.saveAppConfig = async function() {
+    const appDownloadUrl = document.getElementById('app-download-url').value.trim();
+    const currencySystem = document.querySelector('input[name="currency-sys"]:checked')?.value || 'BDT';
+    await setDoc(doc(db,"config","main"),{appDownloadUrl, currencySystem},{merge:true});
+    toast(`Config saved! Currency: ${currencySystem}`);
+    document.getElementById('app-config-status').textContent = `✅ Saved: ${currencySystem}${appDownloadUrl?', App URL set':''}`;
+};
+
+
+
+
+
+</script>
+</body>
+</html>
